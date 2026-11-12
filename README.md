@@ -1,41 +1,39 @@
 # Food Cart OS
 
-Responsive React + TypeScript ordering and operations app for a single food cart.
+Mobile-friendly customer ordering and single-cart operations app built with React, TypeScript, Vite and Supabase.
+
+## Local setup
+
+1. Install Node.js 22 or newer.
+2. Run `npm install`.
+3. Copy `.env.example` to `.env.local`.
+4. Set `VITE_SUPABASE_URL` to the Food Cart Supabase project URL.
+5. Set `VITE_SUPABASE_PUBLISHABLE_KEY` to the project's publishable key.
+6. Run `npm run dev` and open the local URL printed by Vite.
+
+Never place a Supabase secret/service-role key or payment credentials in a `VITE_*` variable. `.env.local` is ignored by Git.
+
+## Current cloud integration
+
+- Customer menu reads available menu items and categories from Supabase.
+- Guest checkout calls the `create-guest-order` Edge Function. Prices and totals are calculated server-side from database records.
+- Customer details are optional; orders are pickup orders.
+- Staff can sign in with an existing Supabase Auth account whose **app_metadata.role** is `operator` or `admin`.
+- Authenticated operators can read the order queue, advance order status, and toggle menu item availability.
+- Operator order queue refreshes on database changes and has a 20-second refresh fallback.
+- Row Level Security is enabled on all public application tables.
+
+## Not yet enabled
+
+- Staff account provisioning: an administrator must assign `app_metadata.role` securely. Do not set this in user-editable metadata.
+- Menu item creation/editing and category management.
+- Online payments. Current checkout does not collect money; payment status remains pending and customers pay at the counter.
+- Menu photo OCR, external AI voice, customer notifications, production deployment and end-to-end acceptance testing.
 
 ## Supabase project
 
-The app is configured for the Food Cart Supabase project. Its current cloud setup includes:
+Project reference: `cnzhurhlcjiulyzfutfd`.
 
-- `menu_categories`, `menu_items`, `orders`, `order_items`, and `store_settings` tables.
-- Row Level Security enabled on every public table.
-- Five starter menu categories and five starter menu items, plus default store settings.
-- `create-guest-order` Edge Function. It validates item IDs and quantities, calculates prices and tax from database values, creates the order and line items, and returns an order number and pickup token.
+The `create-guest-order` Edge Function is deployed with JWT verification disabled for guest checkout. It uses the service-role key only inside the Edge Function. Add abuse protection (rate limiting and/or CAPTCHA) and tighten allowed origins before public launch.
 
-## Run locally
-
-Requirements: Node.js 20+ and npm.
-
-1. Extract this repository.
-2. Run `npm install`.
-3. Copy `.env.example` to `.env.local`.
-4. Set `VITE_SUPABASE_URL` to `https://cnzhurhlcjiulyzfutfd.supabase.co`.
-5. Set `VITE_SUPABASE_PUBLISHABLE_KEY` to the project's publishable key from Supabase Settings → API Keys.
-6. Run `npm run dev` and open the local URL printed by Vite.
-
-Only the publishable key belongs in the browser. Never place a Supabase secret/service-role key or payment credentials in `VITE_*` variables or commit them to source control.
-
-## Connected in this build
-
-- Customer menu reads categories and available menu items from Supabase.
-- Guest checkout calls the deployed `create-guest-order` Edge Function.
-- The database, not the browser, determines current item prices and computes the order total.
-- Order creation writes an order and its line items to Supabase.
-- Browser speech input/output and the rule-based menu assistant remain available.
-
-## Pending before real-world launch
-
-- Operator authentication and role assignment, then live operator menu/order management and realtime updates.
-- Payment gateway integration and verified payment webhooks. Current checkout records a pending/demo payment; it does not charge a customer.
-- AI model/voice integration, menu-photo OCR, notifications, production hosting/domain, and end-to-end QA.
-
-The operator dashboard still contains sample/local state in this build. Do not use it as a live kitchen order console until staff authentication and live order synchronization are implemented. The order-creation function is publicly callable for guest checkout; add abuse controls (rate limiting/CAPTCHA) and an origin policy before broad public promotion.
+See `supabase/migrations/` for migrations tracked in this repository. The initial database setup predates this migration file; the live project remains the current reference for the base schema.
