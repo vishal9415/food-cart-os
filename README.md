@@ -25,7 +25,9 @@ Never place a Supabase secret/service-role key or payment credentials in a `VITE
 
 ## Not yet enabled
 
-- Staff account provisioning: an administrator must assign `app_metadata.role` securely. Do not set this in user-editable metadata.
+- Admins can invite Operators and Admins, view staff accounts, change roles, and revoke app access from the Access Management tab.
+- Staff permissions are stored in trusted `app_metadata.role` and enforced server-side. Do not use user-editable metadata for access decisions.
+- The first Admin account requires a one-time secure bootstrap by the project owner; after that, Admins can manage all staff from the app.
 - Menu item creation/editing and category management.
 - Online payments. Current checkout does not collect money; payment status remains pending and customers pay at the counter.
 - Menu photo OCR, external AI voice, customer notifications, production deployment and end-to-end acceptance testing.
@@ -34,6 +36,6 @@ Never place a Supabase secret/service-role key or payment credentials in a `VITE
 
 Project reference: `cnzhurhlcjiulyzfutfd`.
 
-The `create-guest-order` Edge Function is deployed with JWT verification disabled for guest checkout. It uses the service-role key only inside the Edge Function. Add abuse protection (rate limiting and/or CAPTCHA) and tighten allowed origins before public launch.
+The `create-guest-order` and `manage-staff-access` Edge Functions are deployed with JWT verification disabled and validate their own request context. They use the service-role key only inside the Edge Function. Add abuse protection (rate limiting and/or CAPTCHA) and tighten allowed origins before public launch. Staff invitations use Supabase Auth email delivery; configure a production SMTP provider before relying on invitations at scale.
 
 See `supabase/migrations/` for migrations tracked in this repository. The initial database setup predates this migration file; the live project remains the current reference for the base schema.
