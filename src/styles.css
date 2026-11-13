@@ -30,3 +30,6 @@
 .sales-subtitle{font-size:14px;margin:22px 0 8px;color:#294737}
 .sales-item{display:flex;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid #edf1ed;font-size:12px}
 @media(max-width:600px){.sales-metrics{grid-template-columns:1fr}}
+
+.store-open-control{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid #e6ece6;border-bottom:1px solid #e6ece6}
+.store-open-control>div{display:grid;gap:4px}.store-open-control b{font-size:13px;color:#294737}.store-open-control small{font-size:11px;color:#819087}
