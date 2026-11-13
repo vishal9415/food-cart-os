@@ -26,7 +26,7 @@ export default function App(){
  async function loadMenu(){
   if(!supabase)return;
   const [{data,error},{data:settings}]=await Promise.all([
-   supabase.from("menu_items").select("id,name,description,price,is_available,category_id,menu_categories(name)").order("display_order"),
+   supabase.from("menu_items").select("id,name,description,price,is_available,category_id,category:menu_categories(name)").order("display_order"),
    supabase.from("store_settings").select("store_name,is_accepting_orders").limit(1).maybeSingle()
   ]);
   if(error){setNotice(error.message);return;}
