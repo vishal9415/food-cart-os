@@ -35,7 +35,8 @@ export default function App(){
   if(!supabase)return;
   const [{data,error},{data:settings},{data:cats}]=await Promise.all([
    supabase.from("menu_items").select("id,name,description,price,is_available,category_id,category:menu_categories(name)").order("display_order"),
-   supabase.from("store_settings").select("store_name,is_accepting_orders").limit(1).maybeSingle()
+   supabase.from("store_settings").select("store_name,is_accepting_orders").limit(1).maybeSingle(),
+   supabase.from("menu_categories").select("id,name").eq("is_active",true).order("display_order")
   ]);
   if(error){setNotice(error.message);return;}
   setMenu((data||[]) as any);setCategories((cats||[]) as any);
