@@ -12,3 +12,14 @@
 .last-receipt button{justify-self:start}
 .status.partially_ready,.status.partially_served{background:#fff3df;color:#94651e}
 @media(max-width:600px){.order-item-row{align-items:flex-start;flex-direction:column}.order-item-row select{max-width:none;width:100%}}
+
+.menu-editor{display:grid;gap:12px;padding:16px;margin:16px 0;background:#f7faf7;border:1px solid #e4ece5;border-radius:12px}
+.menu-editor h3{margin:0 0 2px;font-size:15px;color:#244536}
+.menu-editor label,.category-create{display:grid;gap:6px;font-size:11px;font-weight:700;color:#5d6b61}
+.menu-editor input,.menu-editor select,.category-create input{width:100%;padding:10px 11px;border:1px solid #dfe7df;border-radius:8px;background:white;color:#304a39;font:inherit;font-size:12px}
+.menu-editor-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.menu-editor-actions,.menu-admin-actions{display:flex;align-items:center;gap:8px}
+.category-create{display:flex;align-items:center;gap:8px;max-width:520px;margin:12px 0}
+.category-create input{flex:1}
+.menu-admin-actions .outline{padding:7px 10px;font-size:11px}
+@media(max-width:600px){.menu-editor-row{grid-template-columns:1fr}.category-create{align-items:stretch;flex-direction:column}.menu-admin-actions{flex-wrap:wrap}}
