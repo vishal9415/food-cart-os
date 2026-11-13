@@ -33,3 +33,7 @@
 
 .store-open-control{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid #e6ece6;border-bottom:1px solid #e6ece6}
 .store-open-control>div{display:grid;gap:4px}.store-open-control b{font-size:13px;color:#294737}.store-open-control small{font-size:11px;color:#819087}
+
+.category-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:thin}
+.category-chips button{flex:0 0 auto;border:1px solid #dfe8e0;background:#fff;color:#52685a;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:600}
+.category-chips button.active{background:#e8f1eb;border-color:#c9ddce;color:#22523a}
