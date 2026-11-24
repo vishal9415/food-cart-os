@@ -96,17 +96,20 @@ export default function App(){
    try{
     const callback=new URL(url);
     if(callback.protocol!=="foodcartos:"||callback.hostname!=="auth"||callback.pathname!=="/callback")return;
+    const hash=new URLSearchParams(callback.hash.replace(/^#/,""));
+    const isRecovery=callback.searchParams.get("type")==="recovery"||hash.get("type")==="recovery";
     const code=callback.searchParams.get("code");
     if(code){
      const {error}=await supabase.auth.exchangeCodeForSession(code);
      if(error&&active)setNotice("The sign-in link could not be verified. Request a new link and try again.");
+     else if(isRecovery&&active)setIsPasswordRecovery(true);
      return;
     }
-    const hash=new URLSearchParams(callback.hash.replace(/^#/,""));
     const access_token=hash.get("access_token"),refresh_token=hash.get("refresh_token");
     if(access_token&&refresh_token){
      const {error}=await supabase.auth.setSession({access_token,refresh_token});
      if(error&&active)setNotice("The sign-in link could not be verified. Request a new link and try again.");
+     else if(isRecovery&&active)setIsPasswordRecovery(true);
     }
    }catch{
     if(active)setNotice("The sign-in link could not be opened. Request a new link and try again.");
