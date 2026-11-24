@@ -30,9 +30,9 @@ Deno.serve(async(req:Request)=>{
   stage="create_order_rpc"; const {data:order,error}=await db.rpc("create_guest_order",{p_cart_id:cartId,p_customer:{name:typeof customer.name==="string"?customer.name.slice(0,120):"",phone:typeof customer.phone==="string"?customer.phone.slice(0,30):"",email:typeof customer.email==="string"?customer.email.slice(0,254):""},p_items:clean,p_notes:notes});
   if(error){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:error.message},{status:400,headers:cors});}
   stage="save_checkout_receipt"; const {error:saveError}=await db.from("guest_order_requests").update({order_id:order.id}).eq("id",reservation.id);
-  if(saveError)return Response.json({error:"Order created. Keep pickup token "+order.pickup_token+" while we finish saving your receipt."},{status:202,headers:cors});
+  if(saveError)return Response.json({order,warning:"Order created. Keep pickup token "+order.pickup_token+" while we finish saving your receipt."},{status:202,headers:cors});
   stage="link_order_session"; const {error:linkError}=await db.from("orders").update({customer_session_id:session.id}).eq("id",order.id);
-  if(linkError)return Response.json({error:"Order created. Keep your pickup token: "+order.pickup_token},{status:202,headers:cors});
+  if(linkError)return Response.json({order,warning:"Order created. Keep your pickup token: "+order.pickup_token},{status:202,headers:cors});
   return Response.json({order,customer_session_id:session.id},{status:201,headers:cors});
  }catch(err){console.error("create-guest-order failure",{stage,error:err instanceof Error?err.message:String(err)});return Response.json({error:"Checkout failed during "+stage+". Please try again.",stage},{status:500,headers:cors});}
 });
