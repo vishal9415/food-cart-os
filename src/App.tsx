@@ -27,21 +27,27 @@ export default function App(){
  const [storeName,setStoreName]=useState("The Food Cart");
  const [storeOpen,setStoreOpen]=useState(true);
  const [storeId,setStoreId]=useState<string|null>(null);
+ const [cartId,setCartId]=useState<string|null>(null);
+ const [cartInfo,setCartInfo]=useState<any>(null);
+ const [cartRole,setCartRole]=useState<string|null>(null);
+ const [cartSlug]=useState(()=>{const match=window.location.pathname.match(/^\\/c\\/([^/]+)/);return match?.[1]||"the-food-cart";});
  const [prepMinutes,setPrepMinutes]=useState(20);
  const [settingsName,setSettingsName]=useState("The Food Cart");
  const [staff,setStaff]=useState<any[]>([]);
  const [inviteEmail,setInviteEmail]=useState("");
  const [inviteRole,setInviteRole]=useState("operator");
- const isAdmin=user?.app_metadata?.role==="admin";
+ const isAdmin=cartRole==="owner";
  const total=useMemo(()=>menu.reduce((s,i)=>s+i.price*(cart[i.id]||0),0),[menu,cart]);
  const count=Object.values(cart).reduce((a,b)=>a+b,0);
  const salesToday=useMemo(()=>{const start=new Date();start.setHours(0,0,0,0);const todays=orders.filter(o=>new Date(o.created_at)>=start);const top=new Map<string,number>();todays.forEach(o=>o.order_items?.forEach(i=>top.set(i.item_name,(top.get(i.item_name)||0)+i.quantity)));return {count:todays.length,value:todays.reduce((sum,o)=>sum+Number(o.total_amount||0),0),items:[...top.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5)}},[orders]);
  async function loadMenu(){
   if(!supabase)return;
+  let activeCartId=cartId;
+  if(!activeCartId){const {data:found,error:cartError}=await supabase.from("carts").select("id,name,slug").eq("slug",cartSlug).eq("is_active",true).maybeSingle();if(cartError||!found){setNotice("This food cart link is unavailable.");return;}activeCartId=found.id;setCartId(found.id);setCartInfo(found);}
   const [{data,error},{data:settings},{data:cats}]=await Promise.all([
-   supabase.from("menu_items").select("id,name,description,price,is_available,category_id,category:menu_categories(name)").order("display_order"),
-   supabase.from("store_settings").select("id,store_name,is_accepting_orders,estimated_prep_minutes").limit(1).maybeSingle(),
-   supabase.from("menu_categories").select("id,name").eq("is_active",true).order("display_order")
+   supabase.from("menu_items").select("id,name,description,price,is_available,category_id,category:menu_categories(name)").eq("cart_id",activeCartId).order("display_order"),
+   supabase.from("store_settings").select("id,store_name,is_accepting_orders,estimated_prep_minutes").eq("cart_id",activeCartId).maybeSingle(),
+   supabase.from("menu_categories").select("id,name").eq("cart_id",activeCartId).eq("is_active",true).order("display_order")
   ]);
   if(error){setNotice(error.message);return;}
   setMenu((data||[]) as any);setCategories((cats||[]) as any);
@@ -49,21 +55,23 @@ export default function App(){
  }
  async function loadCustomerOrders(){
   if(!supabase)return;
-  const {data,error}=await supabase.functions.invoke("get-customer-orders",{body:{session_token:getCustomerSessionToken()}});
+  if(!cartId)return;
+  const {data,error}=await supabase.functions.invoke("get-customer-orders",{body:{session_token:getCustomerSessionToken(),cart_id:cartId}});
   if(error||data?.error)return;
   setCustomerOrders(data.orders||[]);
  }
  async function loadOrders(){
-  if(!supabase||!user)return;
-  const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").order("created_at",{ascending:false}).limit(500);
+  if(!supabase||!user||!cartId)return;
+  const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").eq("cart_id",cartId).order("created_at",{ascending:false}).limit(500);
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
   setOrders((data||[]) as any);
  }
- useEffect(()=>{void loadMenu();void loadCustomerOrders(); if(!supabase)return; supabase.auth.getSession().then(({data})=>setUser(data.session?.user||null)); const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,session)=>setUser(session?.user||null)); return()=>subscription.unsubscribe();},[]);
- useEffect(()=>{if(user)void loadOrders();else setOrders([]);},[user]);
+ useEffect(()=>{void loadMenu(); if(!supabase)return; supabase.auth.getSession().then(({data})=>setUser(data.session?.user||null)); const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,session)=>setUser(session?.user||null)); return()=>subscription.unsubscribe();},[]);
+ useEffect(()=>{if(user&&cartId)void loadOrders();else setOrders([]);},[user,cartId]);
+ useEffect(()=>{if(cartId)void loadCustomerOrders();},[cartId]);
  useEffect(()=>{if(isAdmin)void loadStaff();else setStaff([]);},[user]);
- useEffect(()=>{const client=supabase;if(!user||!client)return; const channel=client.channel("operator-orders").on("postgres_changes",{event:"*",schema:"public",table:"orders"},()=>void loadOrders()).subscribe(); const timer=window.setInterval(()=>void loadOrders(),20000); return()=>{window.clearInterval(timer);void client.removeChannel(channel);};},[user]);
- async function login(e:React.FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);const {data,error}=await supabase.auth.signInWithPassword({email,password});setBusy(false);if(error){setNotice(error.message);return;}if(!data.user?.app_metadata?.role||!["operator","admin"].includes(data.user.app_metadata.role)){await supabase.auth.signOut();setNotice("This account is not authorised as a Food Cart operator.");return;}setUser(data.user);setNotice("Signed in.");}
+ useEffect(()=>{const client=supabase;if(!user||!client||!cartId)return; const channel=client.channel("operator-orders-"+cartId).on("postgres_changes",{event:"*",schema:"public",table:"orders",filter:"cart_id=eq."+cartId},()=>void loadOrders()).subscribe(); const timer=window.setInterval(()=>void loadOrders(),20000); return()=>{window.clearInterval(timer);void client.removeChannel(channel);};},[user,cartId]);
+ async function login(e:React.FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error){setBusy(false);setNotice(error.message);return;}const {data:membership,error:memberError}=await supabase.from("cart_members").select("cart_id,role,carts(id,name,slug)").eq("user_id",data.user.id).limit(1).maybeSingle();setBusy(false);if(memberError||!membership){await supabase.auth.signOut();setNotice("No food cart is linked to this account yet.");return;}setCartId(membership.cart_id);setCartRole(membership.role);setCartInfo(membership.carts);setUser(data.user);setNotice("Signed in.");}
  async function logout(){await supabase?.auth.signOut();setUser(null);setMode("customer");}
  async function manageStaff(payload:Record<string,string>){
   if(!supabase)return null;
@@ -86,7 +94,7 @@ export default function App(){
   setBusy(true);const data=await manageStaff({action:"set_role",user_id:id,role});setBusy(false);
   if(data){setNotice("Staff role updated.");void loadStaff();}
  }
- async function checkout(){if(!supabase||!count||!storeOpen)return;setBusy(true);const items=menu.filter(i=>cart[i.id]>0).map(i=>({menu_item_id:i.id,quantity:cart[i.id]}));const {data,error}=await supabase.functions.invoke("create-guest-order",{body:{customer:{name:customer.trim(),phone:phone.trim()},items,session_token:getCustomerSessionToken(),request_id:getPendingCheckoutRequestId()}});setBusy(false);if(error||!data?.order){let message=data?.error||error?.message||"Order could not be placed.";const response=(error as any)?.context;if(response&&typeof response.clone==="function"){try{const detail=await response.clone().json();if(typeof detail?.error==="string")message=detail.error;}catch{}}setNotice(message);return;}localStorage.removeItem("food-cart-pending-checkout");const receipt={...data.order,created_at:new Date().toISOString(),customer_name:customer.trim()||"Guest"};setLastOrder(receipt);localStorage.setItem("food-cart-last-order",JSON.stringify(receipt));setNotice("Order placed! Order #"+data.order.order_number+" · Pickup token "+data.order.pickup_token);void loadCustomerOrders();setCart({});setCustomer("");setPhone("");}
+ async function checkout(){if(!supabase||!count||!storeOpen||!cartId)return;setBusy(true);const items=menu.filter(i=>cart[i.id]>0).map(i=>({menu_item_id:i.id,quantity:cart[i.id]}));const {data,error}=await supabase.functions.invoke("create-guest-order",{body:{cart_id:cartId,customer:{name:customer.trim(),phone:phone.trim()},items,session_token:getCustomerSessionToken(),request_id:getPendingCheckoutRequestId()}});setBusy(false);if(error||!data?.order){let message=data?.error||error?.message||"Order could not be placed.";const response=(error as any)?.context;if(response&&typeof response.clone==="function"){try{const detail=await response.clone().json();if(typeof detail?.error==="string")message=detail.error;}catch{}}setNotice(message);return;}localStorage.removeItem("food-cart-pending-checkout");const receipt={...data.order,created_at:new Date().toISOString(),customer_name:customer.trim()||"Guest"};setLastOrder(receipt);localStorage.setItem("food-cart-last-order",JSON.stringify(receipt));setNotice("Order placed! Order #"+data.order.order_number+" · Pickup token "+data.order.pickup_token);void loadCustomerOrders();setCart({});setCustomer("");setPhone("");}
  async function changeItemStatus(order:Order,itemId:string,next:string){
   if(!supabase)return;
   const patch:any={status:next};
@@ -117,7 +125,7 @@ export default function App(){
   const price=Number(itemPrice);
   if(!itemName.trim()||!Number.isFinite(price)||price<=0){setNotice("Enter a valid item name and price.");return;}
   setBusy(true);
-  const payload={name:itemName.trim(),description:itemDescription.trim()||null,price,category_id:itemCategory||null};
+  const payload={cart_id:cartId,name:itemName.trim(),description:itemDescription.trim()||null,price,category_id:itemCategory||null};
   const result=editingItem?await supabase.from("menu_items").update(payload).eq("id",editingItem):await supabase.from("menu_items").insert(payload);
   setBusy(false);
   if(result.error){setNotice(result.error.message);return;}
@@ -125,7 +133,7 @@ export default function App(){
  }
  async function createCategory(){
   if(!supabase||!newCategory.trim())return;
-  setBusy(true);const {data,error}=await supabase.from("menu_categories").insert({name:newCategory.trim()}).select("id,name").single();setBusy(false);
+  setBusy(true);const {data,error}=await supabase.from("menu_categories").insert({cart_id:cartId,name:newCategory.trim()}).select("id,name").single();setBusy(false);
   if(error){setNotice(error.message);return;}
   setCategories(c=>[...c,data]);setItemCategory(data.id);setNewCategory("");setNotice("Category created.");
  }
