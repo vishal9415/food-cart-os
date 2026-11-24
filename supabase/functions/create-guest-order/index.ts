@@ -34,7 +34,7 @@ Deno.serve(async(req:Request)=>{
   if(!uuid.test(requestId))return reply(req,{error:"Checkout request is invalid. Please try again."},400);
   if(!Array.isArray(rawItems)||rawItems.length<1||rawItems.length>30)return reply(req,{error:"Add between 1 and 30 items"},400);
   const items=rawItems.map((item:any)=>({menu_item_id:String(item?.menu_item_id??""),quantity:Number(item?.quantity),expected_unit_price:Number(item?.expected_unit_price)}));
-  if(items.some((item:any)=>!uuid.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999||!Number.isFinite(item.expected_unit_price)||item.expected_unit_price<0||Math.round(item.expected_unit_price*100)!==item.expected_unit_price*100))return reply(req,{error:"One or more order items are invalid"},400);
+  if(items.some((item:any)=>!uuid.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999||!Number.isFinite(item.expected_unit_price)||item.expected_unit_price<0||Math.abs(Math.round(item.expected_unit_price*100)-item.expected_unit_price*100)>0.000001))return reply(req,{error:"One or more order items are invalid"},400);
   const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
   const tokenHash=await sha256(token);
   const {data:session,error:sessionError}=await db.from("customer_sessions").upsert({
