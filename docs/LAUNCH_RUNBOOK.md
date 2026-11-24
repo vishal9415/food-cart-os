@@ -28,9 +28,10 @@ In the Supabase dashboard for this project:
 
 - Set the Site URL to `https://food-cart-os.vercel.app`.
 - Add `https://food-cart-os.vercel.app/**` to the allowed redirect URLs (retain any required local development URLs separately).
+- Add `foodcartos://auth/callback` to the allowed redirect URLs for native Android/iOS owner-app email confirmation and password recovery.
 - Enable leaked-password protection in Auth password security settings.
 
-These settings are not currently editable through the connected project-management actions and require a project owner to change in the dashboard.
+These settings are not currently editable through the connected project-management actions and require a project owner to change in the dashboard. The native callback URI must be present before testing email confirmation or password recovery inside either installed app.
 
 ### 2. Complete one controlled end-to-end acceptance test
 
@@ -71,7 +72,7 @@ Publish both documents at stable public URLs and link them from the product/stor
 
 ## Mobile app store track
 
-The web application is deployed. Google Play and Apple App Store submission is not complete. Before store submission, complete the icon/splash assets, screenshots, listing text, legal URLs, publisher details, developer accounts, signing credentials, privacy/data-safety declarations and internal testing. A debug APK is not a store release artifact.
+The web application is deployed. The owner app launches directly into the owner workspace on native devices and uses the `foodcartos://auth/callback` scheme for authentication callbacks. Google Play and Apple App Store submission is not complete. Before store submission, complete the icon/splash assets, screenshots, listing text, legal URLs, publisher details, developer accounts, signing credentials, privacy/data-safety declarations and internal testing. A debug APK is not a store release artifact.
 
 ## Known repository constraint
 
