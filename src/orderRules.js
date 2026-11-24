@@ -9,7 +9,7 @@ export function isOlderThanOrderCursor(order, cursor) {
 export function mergeOrderHistory(newest, current) {
   const fresh = Array.isArray(newest) ? newest : [];
   const loaded = Array.isArray(current) ? current : [];
-  if (!fresh.length) return loaded;
+  if (!fresh.length) return [];
 
   const newestIds = new Set(fresh.map(order => order.id));
   const cursor = fresh[fresh.length - 1];
