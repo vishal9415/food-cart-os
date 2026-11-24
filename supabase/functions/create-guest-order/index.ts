@@ -37,16 +37,12 @@ Deno.serve(async(req:Request)=>{
   if(items.some((item:any)=>!uuid.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999||!Number.isFinite(item.expected_unit_price)||item.expected_unit_price<0||Math.abs(Math.round(item.expected_unit_price*100)-item.expected_unit_price*100)>0.000001))return reply(req,{error:"One or more order items are invalid"},400);
   const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
   const tokenHash=await sha256(token);
-  const {data:session,error:sessionError}=await db.from("customer_sessions").upsert({
-   token_hash:tokenHash,cart_id:cartId,expires_at:new Date(Date.now()+30*24*60*60*1000).toISOString()
-  },{onConflict:"token_hash,cart_id"}).select("id").single();
-  if(sessionError||!session)return reply(req,{error:"Could not create your order session. Please refresh and try again."},503);
-  const {data,error}=await db.rpc("create_guest_order_idempotent",{
-   p_cart_id:cartId,p_customer:{
+  const {data,error}=await db.rpc("create_guest_order_with_session",{
+   p_cart_id:cartId,p_token_hash:tokenHash,p_customer:{
     name:typeof customer.name==="string"?customer.name.trim().slice(0,120):"",
     phone:typeof customer.phone==="string"?customer.phone.trim().slice(0,30):"",
     email:typeof customer.email==="string"?customer.email.trim().slice(0,254):""
-   },p_items:items,p_notes:notes,p_session_id:session.id,p_request_id:requestId
+   },p_items:items,p_notes:notes,p_request_id:requestId
   });
   if(error){
    const message=error.message||"";
@@ -56,7 +52,7 @@ Deno.serve(async(req:Request)=>{
    if(message.includes("MENU_PRICE_OR_AVAILABILITY_CHANGED"))return reply(req,{error:"A menu price or item availability changed. We refreshed the menu; review your cart before placing the order again."},409);
    return reply(req,{error:message.includes("not accepting orders")||message.includes("unavailable")?message:"We could not place your order. Please review your cart and try again."},400);
   }
-  return reply(req,{...data,customer_session_id:session.id},data?.replayed?200:201);
+  return reply(req,data,data?.replayed?200:201);
  }catch(error){
   console.error("create-guest-order failure",error instanceof Error?error.message:String(error));
   return reply(req,{error:"Checkout is temporarily unavailable. Your cart is safe; please try again."},500);
