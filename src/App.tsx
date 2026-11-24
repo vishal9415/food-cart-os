@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
 import QRCode from "qrcode";
 import { Capacitor } from "@capacitor/core";
@@ -19,6 +19,8 @@ const authRedirectUrl = () => Capacitor.isNativePlatform() ? "foodcartos://auth/
 const statusNext:Record<string,string> = {placed:"accepted",accepted:"preparing",preparing:"ready",ready:"completed"};
 export default function App(){
  const [mode,setMode]=useState<"customer"|"operator">(()=>Capacitor.isNativePlatform()||window.location.pathname.startsWith("/owner")?"operator":"customer");
+ const menuLoadSequence=useRef(0);
+ const ordersLoadSequence=useRef(0);
  const [menu,setMenu]=useState<MenuItem[]>([]);
  const [categories,setCategories]=useState<MenuCategory[]>([]);
  const [editingItem,setEditingItem]=useState<string|null>(null);
@@ -58,17 +60,19 @@ export default function App(){
  const salesToday=useMemo(()=>{const start=new Date();start.setHours(0,0,0,0);const todays=orders.filter(o=>new Date(o.created_at)>=start);const top=new Map<string,number>();todays.forEach(o=>o.order_items?.forEach(i=>top.set(i.item_name,(top.get(i.item_name)||0)+i.quantity)));return {count:todays.length,value:todays.reduce((sum,o)=>sum+Number(o.total_amount||0),0),items:[...top.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5)}},[orders]);
  async function loadMenu(targetCartId?:string){
   if(!supabase)return;
+  const requestSequence=++menuLoadSequence.current;
   let activeCartId=targetCartId||cartId;
   if(!activeCartId&&!cartSlug)return;
   if(!activeCartId){const {data:found,error:cartError}=await supabase.from("carts").select("id,name,slug").eq("slug",cartSlug).eq("is_active",true).maybeSingle();if(cartError||!found){setNotice("This food cart link is unavailable.");return;}activeCartId=found.id;setCartId(found.id);setCartInfo(found);}
-  const [{data,error},{data:settings},{data:cats}]=await Promise.all([
+  const [{data,error},{data:settings,error:settingsError},{data:cats,error:categoriesError}]=await Promise.all([
    supabase.from("menu_items").select("id,name,description,price,is_available,category_id,category:menu_categories(name)").eq("cart_id",activeCartId).order("display_order"),
    supabase.from("store_settings").select("id,store_name,is_accepting_orders,estimated_prep_minutes").eq("cart_id",activeCartId).maybeSingle(),
    supabase.from("menu_categories").select("id,name").eq("cart_id",activeCartId).eq("is_active",true).order("display_order")
   ]);
-  if(error){setNotice(error.message);return;}
+  if(requestSequence!==menuLoadSequence.current)return;
+  if(error||settingsError||categoriesError){setNotice(error?.message||settingsError?.message||categoriesError?.message||"Menu could not be refreshed.");return;}
   setMenu((data||[]) as any);setCategories((cats||[]) as any);
-  if(settings){setStoreId(settings.id);setStoreName(settings.store_name);setSettingsName(settings.store_name);setStoreOpen(settings.is_accepting_orders);setPrepMinutes(settings.estimated_prep_minutes||20);}
+  if(settings){setStoreId(settings.id);setStoreName(settings.store_name);setSettingsName(settings.store_name);setStoreOpen(settings.is_accepting_orders);setPrepMinutes(settings.estimated_prep_minutes||20);}else{setStoreOpen(false);setNotice("This cart is not fully configured yet.");}
  }
  async function loadCustomerOrders(){
   if(!supabase)return;
@@ -89,7 +93,9 @@ export default function App(){
  }
  async function loadOrders(){
   if(!supabase||!user||!cartId)return;
+  const requestSequence=++ordersLoadSequence.current;
   const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").eq("cart_id",cartId).order("created_at",{ascending:false}).limit(500);
+  if(requestSequence!==ordersLoadSequence.current)return;
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
   setOrders((data||[]) as any);
  }
@@ -183,10 +189,10 @@ export default function App(){
     if(/availability changed|menu price|not accepting|unavailable/i.test(message))void loadMenu(cartId);
     return;
    }
-   localStorage.removeItem("food-cart-pending-checkout:"+customerCartKey());
    const receipt={...data.order,created_at:new Date().toISOString(),customer_name:customer.trim()||"Guest"};
    setLastOrder(receipt);
-   localStorage.setItem("food-cart-last-order:"+customerCartKey(),JSON.stringify(receipt));
+   try{localStorage.setItem("food-cart-last-order:"+customerCartKey(),JSON.stringify(receipt));}catch{}
+   try{localStorage.removeItem("food-cart-pending-checkout:"+customerCartKey());}catch{}
    setNotice((data.replayed?"We found your previous order; no duplicate was created. ":"Order placed! ")+"Order #"+data.order.order_number+" · Pickup token "+data.order.pickup_token);
    void loadCustomerOrders();
    setCart({});
