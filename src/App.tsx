@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabaseClient";
 import QRCode from "qrcode";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 
 type MenuItem = { id:string; name:string; description:string|null; price:number; is_available:boolean; category_id:string|null; category?:{name:string}|null };
 type MenuCategory = {id:string;name:string};
@@ -11,9 +12,10 @@ function getCustomerSessionToken(){const key="food-cart-session-token:"+customer
 function getPendingCheckoutRequestId(){const key="food-cart-pending-checkout:"+customerCartKey();let id=localStorage.getItem(key);if(!id){id=crypto.randomUUID();localStorage.setItem(key,id);}return id;}
 function elapsedLabel(value:string){const mins=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/60000));if(mins<1)return "Just now";if(mins<60)return mins+" min ago";const hours=Math.floor(mins/60);return hours+" hr "+(mins%60)+" min ago";}
 const money = (n:number) => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(n);
+const authRedirectUrl = () => Capacitor.isNativePlatform() ? "foodcartos://auth/callback" : window.location.origin + "/owner";
 const statusNext:Record<string,string> = {placed:"accepted",accepted:"preparing",preparing:"ready",ready:"completed"};
 export default function App(){
- const [mode,setMode]=useState<"customer"|"operator">(()=>window.location.pathname.startsWith("/owner")?"operator":"customer");
+ const [mode,setMode]=useState<"customer"|"operator">(()=>Capacitor.isNativePlatform()||window.location.pathname.startsWith("/owner")?"operator":"customer");
  const [menu,setMenu]=useState<MenuItem[]>([]);
  const [categories,setCategories]=useState<MenuCategory[]>([]);
  const [editingItem,setEditingItem]=useState<string|null>(null);
@@ -86,7 +88,39 @@ export default function App(){
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
   setOrders((data||[]) as any);
  }
- useEffect(()=>{void loadMenu(); if(!supabase)return; supabase.auth.getSession().then(({data})=>setUser(data.session?.user||null)); const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{setUser(session?.user||null);if(event==="PASSWORD_RECOVERY")setIsPasswordRecovery(true);}); return()=>subscription.unsubscribe();},[]);
+ useEffect(()=>{
+  void loadMenu();
+  if(!supabase)return;
+  let active=true;
+  const handleAuthUrl=async(url:string)=>{
+   try{
+    const callback=new URL(url);
+    if(callback.protocol!=="foodcartos:"||callback.hostname!=="auth"||callback.pathname!=="/callback")return;
+    const code=callback.searchParams.get("code");
+    if(code){
+     const {error}=await supabase.auth.exchangeCodeForSession(code);
+     if(error&&active)setNotice("The sign-in link could not be verified. Request a new link and try again.");
+     return;
+    }
+    const hash=new URLSearchParams(callback.hash.replace(/^#/,""));
+    const access_token=hash.get("access_token"),refresh_token=hash.get("refresh_token");
+    if(access_token&&refresh_token){
+     const {error}=await supabase.auth.setSession({access_token,refresh_token});
+     if(error&&active)setNotice("The sign-in link could not be verified. Request a new link and try again.");
+    }
+   }catch{
+    if(active)setNotice("The sign-in link could not be opened. Request a new link and try again.");
+   }
+  };
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{setUser(session?.user||null);if(event==="PASSWORD_RECOVERY")setIsPasswordRecovery(true);});
+  let urlListener:ReturnType<typeof CapacitorApp.addListener>|undefined;
+  if(Capacitor.isNativePlatform()){
+   urlListener=CapacitorApp.addListener("appUrlOpen",({url})=>{void handleAuthUrl(url);});
+   void CapacitorApp.getLaunchUrl().then(launch=>{if(launch?.url)void handleAuthUrl(launch.url);});
+  }
+  supabase.auth.getSession().then(({data})=>{if(active)setUser(data.session?.user||null);});
+  return()=>{active=false;subscription.unsubscribe();if(urlListener)void urlListener.then(listener=>listener.remove());};
+ },[]);
  useEffect(()=>{if(user&&cartId)void loadOrders();else setOrders([]);},[user,cartId]);
  useEffect(()=>{if(user&&cartId)void loadSalesReport();},[user,cartId,salesPeriod]);
  useEffect(()=>{if(!supabase||!user||cartId)return;supabase.from("cart_members").select("cart_id,role,carts(id,name,slug)").eq("user_id",user.id).limit(1).maybeSingle().then(({data})=>{if(data){setCartId(data.cart_id);setCartRole(data.role);setCartInfo(data.carts);}});},[user,cartId]);
@@ -96,9 +130,9 @@ export default function App(){
  useEffect(()=>{const client=supabase;if(!user||!client||!cartId)return; const channel=client.channel("operator-orders-"+cartId).on("postgres_changes",{event:"*",schema:"public",table:"orders",filter:"cart_id=eq."+cartId},()=>void loadOrders()).subscribe(); const timer=window.setInterval(()=>void loadOrders(),20000); return()=>{window.clearInterval(timer);void client.removeChannel(channel);};},[user,cartId]);
  async function login(e:React.FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error){setBusy(false);setNotice(error.message);return;}const {data:membership}=await supabase.from("cart_members").select("cart_id,role,carts(id,name,slug)").eq("user_id",data.user.id).limit(1).maybeSingle();setBusy(false);setUser(data.user);if(membership){setCartId(membership.cart_id);setCartRole(membership.role);setCartInfo(membership.carts);setNotice("Signed in.");}else{setNotice("Signed in. Create your food cart to finish setup.");}}
  async function logout(){await supabase?.auth.signOut();setUser(null);setCartId(null);setCartInfo(null);setCartRole(null);setMode("operator");}
- async function sendPasswordReset(){if(!supabase||!email.trim()){setNotice("Enter your account email first.");return;}setBusy(true);const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin+"/owner"});setBusy(false);setNotice(error?error.message:"Password reset link sent. Check your email.");}
+ async function sendPasswordReset(){if(!supabase||!email.trim()){setNotice("Enter your account email first.");return;}setBusy(true);const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:authRedirectUrl()});setBusy(false);setNotice(error?error.message:"Password reset link sent. Check your email.");}
  async function updatePassword(e:React.FormEvent){e.preventDefault();if(!supabase||password.length<8){setNotice("Use a password with at least 8 characters.");return;}setBusy(true);const {error}=await supabase.auth.updateUser({password});setBusy(false);if(error){setNotice(error.message);return;}setPassword("");setIsPasswordRecovery(false);setNotice("Password updated. You can continue using your cart.");}
- async function registerOwner(e:React.FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);const {data,error}=await supabase.auth.signUp({email,password,options:{data:{full_name:ownerName.trim()}}});setBusy(false);if(error){setNotice(error.message);return;}if(!data.session){setNotice("Check your email to confirm your account, then sign in to create your cart.");setShowSignup(false);return;}setUser(data.user);setShowSignup(false);setNotice("Account created. Now set up your cart.");}
+ async function registerOwner(e:React.FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);const {data,error}=await supabase.auth.signUp({email,password,options:{data:{full_name:ownerName.trim()},emailRedirectTo:authRedirectUrl()}});setBusy(false);if(error){setNotice(error.message);return;}if(!data.session){setNotice("Check your email to confirm your account, then sign in to create your cart.");setShowSignup(false);return;}setUser(data.user);setShowSignup(false);setNotice("Account created. Now set up your cart.");}
  async function createOwnerCart(e:React.FormEvent){e.preventDefault();if(!supabase||!user)return;setBusy(true);const {data,error}=await supabase.functions.invoke("create-cart",{body:{name:newCartName.trim(),slug:newCartSlug.trim().toLowerCase()}});setBusy(false);if(error||data?.error){setNotice(data?.error||error?.message||"Could not create cart.");return;}setCartId(data.cart.id);setCartInfo(data.cart);setCartRole("owner");setNotice("Your cart is ready. Add your menu and share its QR code.");void loadMenu(data.cart.id);}
 
  async function manageStaff(payload:Record<string,string>){
