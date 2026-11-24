@@ -25,7 +25,7 @@ test("newest refresh preserves loaded older pages without duplicates", () => {
   assert.deepEqual(mergeOrderHistory(newest, loaded), [...newest, loaded[1], loaded[2]]);
 });
 
-test("empty refresh does not discard previously loaded history", () => {
+test("empty newest page clears stale history from a previous cart", () => {
   const loaded = [order("a", "2026-11-24T12:00:00Z")];
-  assert.deepEqual(mergeOrderHistory([], loaded), loaded);
+  assert.deepEqual(mergeOrderHistory([], loaded), []);
 });
