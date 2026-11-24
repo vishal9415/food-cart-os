@@ -30,7 +30,7 @@ Deno.serve(async(req:Request)=>{
    for(let page=1;page<=20&&!target;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:100});if(error)throw error;target=data.users.find(u=>(u.email||"").toLowerCase()===email)||null;if(data.users.length<100)break;}
    if(!target){const {data,error}=await db.auth.admin.inviteUserByEmail(email);if(error)throw error;target=data.user;}
    if(!target)return reply({error:"We could not create the invitation."},500);
-   const {data:existing}=await db.from("cart_members").select("cart_id").eq("user_id",target.id).maybeSingle();
+   const {data:existing}=await db.from("cart_members").select("cart_id").eq("user_id",target.id).limit(1).maybeSingle();
    if(existing&&existing.cart_id!==cartId)return reply({error:"This account is already linked to another cart."},409);
    const {error}=await db.from("cart_members").upsert({cart_id:cartId,user_id:target.id,role},{onConflict:"cart_id,user_id"});
    if(error)throw error;
