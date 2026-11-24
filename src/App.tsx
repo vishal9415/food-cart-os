@@ -43,7 +43,8 @@ export default function App(){
  const [inviteEmail,setInviteEmail]=useState("");
  const [inviteRole,setInviteRole]=useState("operator");
  const isAdmin=cartRole==="owner";
- const customerBaseUrl=((import.meta as any).env.VITE_PUBLIC_APP_URL as string|undefined)?.replace(/\/+$/,"")||(Capacitor.isNativePlatform()?"":window.location.origin);
+ const configuredCustomerUrl=String((import.meta as any).env.VITE_PUBLIC_APP_URL||"").trim();
+ const customerBaseUrl=configuredCustomerUrl?(configuredCustomerUrl.endsWith("/")?configuredCustomerUrl.slice(0,-1):configuredCustomerUrl):(Capacitor.isNativePlatform()?"":window.location.origin);
  const customerUrl=cartInfo?.slug&&customerBaseUrl?customerBaseUrl+"/c/"+cartInfo.slug:"";
  const total=useMemo(()=>menu.reduce((s,i)=>s+i.price*(cart[i.id]||0),0),[menu,cart]);
  const count=Object.values(cart).reduce((a,b)=>a+b,0);
