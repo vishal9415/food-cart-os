@@ -32,6 +32,8 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | One item in a multi-item order is ready while another is preparing | Parent order shows partial readiness; item statuses remain independent | Manual |
 | All items are served | Parent order moves to completed | Manual |
 | More than 100 orders exist | Owner sees the newest 100 first and can load older orders in stable cursor-based pages without losing access to history | Manual regression |
+| New orders arrive while older pages are loaded | Newest orders refresh at the top while previously loaded history remains visible; cursor pagination continues from the oldest loaded order | Manual regression |
+| Owner searches for an older order | Search covers loaded records; owner loads older pages before searching earlier history | Manual regression |
 | Realtime subscription disconnects | Periodic refresh restores the latest order queue | Manual |
 
 ## Tenant isolation and security
