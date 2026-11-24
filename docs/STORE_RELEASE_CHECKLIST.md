@@ -17,6 +17,7 @@
 - [x] Checkout idempotency and per-session/cart rate limits
 - [x] Customer order/session association and 30-day browser history
 - [x] Atomic customer-session creation with checkout; rejected attempts leave no orphan sessions
+- [x] Daily cleanup of expired 30-day customer sessions and checkout-idempotency records
 - [x] Customer-facing 30-distinct-item order limit
 - [x] Cart-scoped category, session and order-audit foreign-key integrity
 - [x] Owner order-history cursor pagination with matching database index
