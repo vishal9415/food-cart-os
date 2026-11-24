@@ -57,3 +57,5 @@
 
 .sales-periods{display:flex;gap:6px;flex-wrap:wrap}.sales-periods button{border:1px solid #e1e9e2;background:#fff;color:#718075;border-radius:8px;padding:9px 12px;font-size:12px}.sales-periods button.active{background:#eaf2ec;color:#28543c;border-color:#d6e5d9;font-weight:700}
 @media(max-width:620px){.section-head:has(.sales-periods){align-items:flex-start;flex-direction:column}.sales-periods{width:100%}.sales-periods button{flex:1}}
+
+.text-button{display:block;border:0;background:transparent;color:#416d53;text-decoration:underline;padding:9px;margin:2px auto;font-size:13px}
