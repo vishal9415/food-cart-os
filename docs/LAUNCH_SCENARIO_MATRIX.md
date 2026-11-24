@@ -12,6 +12,8 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Owner pauses orders while customer is browsing | Server rejects checkout; customer receives a clear message and refreshed store state | Manual |
 | Cart is deactivated while customer is browsing | Checkout is rejected; no order is created; customer is told the link is unavailable | Manual |
 | Customer refreshes or closes/reopens the tab | Basket restores for the same cart and browser for up to 30 days | Automated basket rules + manual |
+| Customer returns to the same cart within 30 days | Orders placed in that browser session appear in recent order history; another cart session never exposes them | Database checkout test + manual |
+| Menu item is assigned a category from another cart | Database composite foreign key rejects the cross-cart category reference | Database constraint test |
 | Customer opens two different cart QR links on the same device | Each cart has an independent basket and order session | Manual |
 | Customer removes the final item | Basket becomes empty and checkout is unavailable | Automated basket rules |
 | Customer quantity reaches 999 or attempts 1,000 | UI caps quantity at 999; server remains the final validator | Automated basket rules |
@@ -29,6 +31,7 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Staff member is removed while signed in | Subsequent protected operations are denied by current membership checks | Manual/API |
 | Manager/operator tries to invite or remove staff | Request is denied; owner-only controls remain protected server-side | Manual/API |
 | Staff tries to edit an order total or item directly | Database trigger rejects direct order mutation; approved status RPC remains available | Database security review |
+| An order status audit event references another cart/order/item | Composite foreign keys reject the mismatched audit reference | Database constraint review |
 | One item in a multi-item order is ready while another is preparing | Parent order shows partial readiness; item statuses remain independent | Manual |
 | All items are served | Parent order moves to completed | Manual |
 | More than 100 orders exist | Owner sees the newest 100 first and can load older orders in stable cursor-based pages without losing access to history | Manual regression |
