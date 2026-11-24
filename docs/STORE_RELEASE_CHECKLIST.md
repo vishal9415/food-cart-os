@@ -12,9 +12,10 @@
 - [x] SPA rewrites for /owner and /c/:slug routes
 - [x] Tenant-aware RLS and cart-scoped customer order recovery
 - [x] Checkout idempotency and per-session rate limit
+- [x] Production Vercel project linked to GitHub main and deployed successfully
+- [x] Production QR base URL configured as https://food-cart-os.vercel.app
+- [x] Edge Function CORS restricted to production, native app and local development origins
 - [ ] End-to-end acceptance test with a newly registered owner and a real test cart
-- [ ] Production domain configured as VITE_PUBLIC_APP_URL
-- [ ] Restrict Edge Function CORS to the deployed web domain and approved local origins
 - [ ] Configure Supabase Auth site URL and allowed redirect URLs for production
 - [ ] Enable leaked-password protection in Supabase Auth
 - [ ] Add production monitoring, alerting and automated backups review
@@ -33,7 +34,7 @@
 - [ ] TestFlight and Play internal testing completed
 
 ## Decisions needed before public launch
-1. Public customer web domain (used inside every cart QR code).
-2. Legal publisher name and support/privacy contact email.
+1. Legal publisher/entity name and business address.
+2. Support and privacy contact email.
 3. Access to Google Play Console and Apple Developer accounts when store submission begins.
-4. Confirmation of the final app display name and store listing branding.
+4. Confirmation of the final app display name and store listing branding (current default: Food Cart OS).
