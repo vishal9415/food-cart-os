@@ -1,4 +1,5 @@
 export function getOrCreateStoredValue(key, createValue, fallback, getStorage) {
+  if (fallback.has(key)) return fallback.get(key);
   let candidate;
   try {
     const storage = getStorage();
