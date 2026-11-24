@@ -1,3 +1,5 @@
+grant usage on schema private to service_role;
+
 create or replace function private.create_guest_order_idempotent(
  p_cart_id uuid,p_customer jsonb,p_items jsonb,p_notes text,p_session_id uuid,p_request_id uuid
 ) returns jsonb
