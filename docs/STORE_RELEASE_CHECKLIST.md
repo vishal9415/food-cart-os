@@ -14,20 +14,29 @@
 - [x] Native authentication callback handling implemented for email confirmation and password recovery
 - [x] SPA rewrites for /owner and /c/:slug routes
 - [x] Tenant-aware RLS and cart-scoped customer order recovery
-- [x] Checkout idempotency and per-session rate limit
+- [x] Checkout idempotency and per-session/cart rate limits
+- [x] Customer order/session association and 30-day browser history
+- [x] Cart-scoped category, session and order-audit foreign-key integrity
+- [x] Owner order-history cursor pagination with matching database index
+- [x] Browser storage fallback for checkout session/request IDs
+- [x] Automated regression tests for basket and browser-storage edge cases
 - [x] Production Vercel project linked to GitHub main and deployed successfully
 - [x] Production QR base URL configured as https://food-cart-os.vercel.app
 - [x] Edge Function CORS restricted to production, native app and local development origins
 - [ ] End-to-end acceptance test with a newly registered owner and a real test cart
-- [ ] Configure Supabase Auth site URL and allowed redirect URLs for production, including `foodcartos://auth/callback`
-- [ ] Enable leaked-password protection in Supabase Auth
-- [ ] Add production monitoring, alerting and automated backups review
+- [x] Configure Supabase Auth site URL and allowed redirect URLs for production, including `foodcartos://auth/callback`
+- [ ] Enable leaked-password protection in Supabase Auth (blocked by current plan capability)
+- [ ] Complete production end-to-end acceptance test on a dedicated test cart
+- [ ] Verify automated backups and complete a restore drill
+- [ ] Add production monitoring and alerting
+- [ ] Deploy latest main commit after Vercel's 100-deploy/24-hour quota resets
 
 ## Store submission
 - [ ] Final app icon set and splash screens
 - [ ] Store screenshots and listing copy
-- [ ] Public privacy policy URL and support contact
-- [ ] Terms of service URL
+- [ ] Finalise and publish privacy policy (draft in `docs/PRIVACY_POLICY_DRAFT.md`)
+- [ ] Finalise and publish terms of service (draft in `docs/TERMS_OF_SERVICE_DRAFT.md`)
+- [ ] Support/privacy contact email and legal publisher details
 - [ ] Confirm legal publisher/entity name and business address
 - [ ] Google Play developer account and app signing
 - [ ] Apple Developer account, bundle ID and signing
@@ -38,6 +47,7 @@
 
 ## Decisions needed before public launch
 1. Legal publisher/entity name and business address.
-2. Support and privacy contact email.
-3. Access to Google Play Console and Apple Developer accounts when store submission begins.
-4. Confirmation of the final app display name and store listing branding (current default: Food Cart OS).
+2. Confirm the public support/privacy email address.
+3. Approve an order/session/idempotency data-retention schedule and deletion process.
+4. Access to Google Play Console and Apple Developer accounts when store submission begins.
+5. Confirmation of the final app display name and store listing branding (current default: Food Cart OS).
