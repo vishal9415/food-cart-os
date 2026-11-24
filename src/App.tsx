@@ -128,26 +128,10 @@ export default function App(){
   if(!supabase)return;
   const transitions:Record<string,string[]>={pending:["preparing"],preparing:["ready"],ready:["served"],served:[]};
   if(!(transitions[current]||[]).includes(next)){setNotice("Items must move in order: Pending → Preparing → Ready → Served.");return;}
-  const patch:any={status:next};
-  if(next==="ready")patch.ready_at=new Date().toISOString();
-  if(next==="served")patch.served_at=new Date().toISOString();
-  const {error}=await supabase.from("order_items").update(patch).eq("id",itemId);
-  if(error){setNotice(error.message);return;}
-  const {data,error:readError}=await supabase.from("order_items").select("status").eq("order_id",order.id);
-  if(readError){setNotice(readError.message);return;}
-  const states=(data||[]).map((x:any)=>x.status);
-  const served=states.filter((x:string)=>x==="served").length;
-  const readyOrServed=states.filter((x:string)=>x==="ready"||x==="served").length;
-  const hasReady=states.some((x:string)=>x==="ready");
-  const hasPreparing=states.some((x:string)=>x==="preparing");
-  let overall="placed";
-  if(states.length&&served===states.length)overall="completed";
-  else if(served>0)overall="partially_served";
-  else if(states.length&&readyOrServed===states.length)overall="ready";
-  else if(hasReady)overall="partially_ready";
-  else if(hasPreparing)overall="preparing";
-  const {error:statusError}=await supabase.from("orders").update({status:overall}).eq("id",order.id);
-  if(statusError)setNotice(statusError.message);else {setNotice("Item updated.");void loadOrders();}
+  const {data,error}=await supabase.rpc("update_order_item_status",{p_order_item_id:itemId,p_next_status:next});
+  if(error){setNotice(error.message.includes("INVALID_STATUS_TRANSITION")?"This item was updated by another team member. Refresh the order and try again.":error.message);return;}
+  setNotice("Item updated. Order status: "+String(data?.order_status||"updated").replaceAll("_"," ")+".");
+  void loadOrders();
  }
  function startEditItem(i:MenuItem){setEditingItem(i.id);setItemName(i.name);setItemDescription(i.description||"");setItemPrice(String(i.price));setItemCategory(i.category_id||"");}
  function resetItemForm(){setEditingItem(null);setItemName("");setItemDescription("");setItemPrice("");setItemCategory("");}
