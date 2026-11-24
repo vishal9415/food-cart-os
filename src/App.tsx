@@ -55,7 +55,7 @@ export default function App(){
  const [inviteEmail,setInviteEmail]=useState("");
  const [inviteRole,setInviteRole]=useState("operator");
  const isAdmin=cartRole==="owner";
- const configuredCustomerUrl=String((import.meta as any).env.VITE_PUBLIC_APP_URL||"").trim();
+ const configuredCustomerUrl=String((import.meta as any).env.VITE_CUSTOMER_BASE_URL||(import.meta as any).env.VITE_PUBLIC_APP_URL||"").trim();
  const customerBaseUrl=configuredCustomerUrl?(configuredCustomerUrl.endsWith("/")?configuredCustomerUrl.slice(0,-1):configuredCustomerUrl):(Capacitor.isNativePlatform()?"":window.location.origin);
  const customerUrl=cartInfo?.slug&&customerBaseUrl?customerBaseUrl+"/c/"+cartInfo.slug:"";
  const total=useMemo(()=>calculateCartTotal(cart,menu),[menu,cart]);
