@@ -90,7 +90,8 @@ export default function App(){
  }
  useEffect(()=>{
   void loadMenu();
-  if(!supabase)return;
+  const client=supabase;
+  if(!client)return;
   let active=true;
   const handleAuthUrl=async(url:string)=>{
    try{
@@ -100,14 +101,14 @@ export default function App(){
     const isRecovery=callback.searchParams.get("type")==="recovery"||hash.get("type")==="recovery";
     const code=callback.searchParams.get("code");
     if(code){
-     const {error}=await supabase.auth.exchangeCodeForSession(code);
+     const {error}=await client.auth.exchangeCodeForSession(code);
      if(error&&active)setNotice("The sign-in link could not be verified. Request a new link and try again.");
      else if(isRecovery&&active)setIsPasswordRecovery(true);
      return;
     }
     const access_token=hash.get("access_token"),refresh_token=hash.get("refresh_token");
     if(access_token&&refresh_token){
-     const {error}=await supabase.auth.setSession({access_token,refresh_token});
+     const {error}=await client.auth.setSession({access_token,refresh_token});
      if(error&&active)setNotice("The sign-in link could not be verified. Request a new link and try again.");
      else if(isRecovery&&active)setIsPasswordRecovery(true);
     }
@@ -115,13 +116,13 @@ export default function App(){
     if(active)setNotice("The sign-in link could not be opened. Request a new link and try again.");
    }
   };
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{setUser(session?.user||null);if(event==="PASSWORD_RECOVERY")setIsPasswordRecovery(true);});
+  const {data:{subscription}}=client.auth.onAuthStateChange((event,session)=>{setUser(session?.user||null);if(event==="PASSWORD_RECOVERY")setIsPasswordRecovery(true);});
   let urlListener:ReturnType<typeof CapacitorApp.addListener>|undefined;
   if(Capacitor.isNativePlatform()){
    urlListener=CapacitorApp.addListener("appUrlOpen",({url})=>{void handleAuthUrl(url);});
    void CapacitorApp.getLaunchUrl().then(launch=>{if(launch?.url)void handleAuthUrl(launch.url);});
   }
-  supabase.auth.getSession().then(({data})=>{if(active)setUser(data.session?.user||null);});
+  client.auth.getSession().then(({data})=>{if(active)setUser(data.session?.user||null);});
   return()=>{active=false;subscription.unsubscribe();if(urlListener)void urlListener.then(listener=>listener.remove());};
  },[]);
  useEffect(()=>{if(user&&cartId)void loadOrders();else setOrders([]);},[user,cartId]);
