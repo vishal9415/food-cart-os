@@ -31,8 +31,10 @@ Deno.serve(async(req:Request)=>{
    for(let page=1;page<=20&&!target;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:100});if(error)throw error;target=data.users.find(u=>(u.email||"").toLowerCase()===email)||null;if(data.users.length<100)break;}
    if(!target){const {data,error}=await db.auth.admin.inviteUserByEmail(email);if(error)throw error;target=data.user;}
    if(!target)return reply(req,{error:"We could not create the invitation."},500);
-   const {data:existing}=await db.from("cart_members").select("cart_id").eq("user_id",target.id).limit(1).maybeSingle();
+   if(target.id===actor.id)return reply(req,{error:"You cannot replace your own owner access."},400);
+   const {data:existing}=await db.from("cart_members").select("cart_id,role").eq("user_id",target.id).limit(1).maybeSingle();
    if(existing&&existing.cart_id!==cartId)return reply(req,{error:"This account is already linked to another cart."},409);
+   if(existing?.role==="owner")return reply(req,{error:"Owner access cannot be changed through staff invitations."},409);
    const {error}=await db.from("cart_members").upsert({cart_id:cartId,user_id:target.id,role},{onConflict:"cart_id,user_id"});
    if(error)throw error;
    return reply(req,{success:true,email,role});
@@ -43,6 +45,7 @@ Deno.serve(async(req:Request)=>{
    if(!["operator","manager"].includes(role))return reply(req,{error:"Choose Operator or Manager access."},400);
    const {data:target}=await db.from("cart_members").select("id,role").eq("cart_id",cartId).eq("user_id",userId).maybeSingle();
    if(!target)return reply(req,{error:"Team member not found."},404);
+   if(target.role==="owner")return reply(req,{error:"Owner access cannot be changed through staff management."},409);
    const {error}=await db.from("cart_members").update({role}).eq("id",target.id);
    if(error)throw error;
    return reply(req,{success:true});
@@ -50,6 +53,9 @@ Deno.serve(async(req:Request)=>{
   if(action==="remove"){
    const userId=String(body?.user_id||"");
    if(!userId||userId===actor.id)return reply(req,{error:"You cannot remove your own owner access."},400);
+   const {data:target}=await db.from("cart_members").select("role").eq("cart_id",cartId).eq("user_id",userId).maybeSingle();
+   if(!target)return reply(req,{error:"Team member not found."},404);
+   if(target.role==="owner")return reply(req,{error:"Owner access cannot be removed through staff management."},409);
    const {error}=await db.from("cart_members").delete().eq("cart_id",cartId).eq("user_id",userId);
    if(error)throw error;
    return reply(req,{success:true});
