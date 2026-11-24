@@ -35,6 +35,7 @@ The production Supabase project has these applied migration versions:
 - 20261124090036 — enforce_single_cart_membership_per_user
 - 20261124094717 — enforce_menu_category_cart_scope
 - 20261124094849 — enforce_order_session_and_audit_scope
+- 20261124095423 — index_order_queue_cursor
 
 ## Missing source files
 
