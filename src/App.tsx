@@ -93,7 +93,9 @@ export default function App(){
   const client=supabase;
   if(!client)return;
   let active=true;
+  const sessionReady=client.auth.getSession().then(({data})=>{if(active)setUser(data.session?.user||null);});
   const handleAuthUrl=async(url:string)=>{
+   await sessionReady;
    try{
     const callback=new URL(url);
     if(callback.protocol!=="foodcartos:"||callback.hostname!=="auth"||callback.pathname!=="/callback")return;
@@ -122,7 +124,6 @@ export default function App(){
    urlListener=CapacitorApp.addListener("appUrlOpen",({url})=>{void handleAuthUrl(url);});
    void CapacitorApp.getLaunchUrl().then(launch=>{if(launch?.url)void handleAuthUrl(launch.url);});
   }
-  client.auth.getSession().then(({data})=>{if(active)setUser(data.session?.user||null);});
   return()=>{active=false;subscription.unsubscribe();if(urlListener)void urlListener.then(listener=>listener.remove());};
  },[]);
  useEffect(()=>{if(user&&cartId)void loadOrders();else setOrders([]);},[user,cartId]);
