@@ -27,7 +27,7 @@ Never place a Supabase secret/service-role key or payment credentials in a `VITE
 
 ## Native app setup
 
-The native owner app uses Capacitor:
+The native owner app uses Capacitor and opens directly into the owner workspace. Native email confirmation and password recovery use the `foodcartos://auth/callback` URL scheme; add that exact URI to Supabase Auth allowed redirect URLs before testing these flows:
 
 ```bash
 npm install
