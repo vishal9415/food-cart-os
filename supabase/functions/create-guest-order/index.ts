@@ -33,8 +33,8 @@ Deno.serve(async(req:Request)=>{
   if(!/^[a-f0-9]{64}$/i.test(token))return reply(req,{error:"Customer session is invalid. Refresh the page and try again."},400);
   if(!uuid.test(requestId))return reply(req,{error:"Checkout request is invalid. Please try again."},400);
   if(!Array.isArray(rawItems)||rawItems.length<1||rawItems.length>30)return reply(req,{error:"Add between 1 and 30 items"},400);
-  const items=rawItems.map((item:any)=>({menu_item_id:String(item?.menu_item_id??""),quantity:Number(item?.quantity)}));
-  if(items.some((item:any)=>!uuid.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999))return reply(req,{error:"One or more order items are invalid"},400);
+  const items=rawItems.map((item:any)=>({menu_item_id:String(item?.menu_item_id??""),quantity:Number(item?.quantity),expected_unit_price:Number(item?.expected_unit_price)}));
+  if(items.some((item:any)=>!uuid.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999||!Number.isFinite(item.expected_unit_price)||item.expected_unit_price<0||Math.round(item.expected_unit_price*100)!==item.expected_unit_price*100))return reply(req,{error:"One or more order items are invalid"},400);
   const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
   const tokenHash=await sha256(token);
   const {data:session,error:sessionError}=await db.from("customer_sessions").upsert({
@@ -53,6 +53,7 @@ Deno.serve(async(req:Request)=>{
    if(message.includes("RATE_LIMIT_SESSION"))return reply(req,{error:"Too many checkout attempts. Wait a minute and try again."},429);
    if(message.includes("RATE_LIMIT_CART"))return reply(req,{error:"This cart is receiving many orders right now. Please wait a moment and try again."},429);
    if(message.includes("CUSTOMER_SESSION_INVALID"))return reply(req,{error:"Customer session expired. Refresh the page and try again."},401);
+   if(message.includes("MENU_PRICE_OR_AVAILABILITY_CHANGED"))return reply(req,{error:"A menu price or item availability changed. We refreshed the menu; review your cart before placing the order again."},409);
    return reply(req,{error:message.includes("not accepting orders")||message.includes("unavailable")?message:"We could not place your order. Please review your cart and try again."},400);
   }
   return reply(req,{...data,customer_session_id:session.id},data?.replayed?200:201);
