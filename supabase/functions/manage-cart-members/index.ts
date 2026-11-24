@@ -32,10 +32,10 @@ Deno.serve(async(req:Request)=>{
    // Validate an existing account's access before sending any invitation email.
    if(target){
     if(target.id===actor.id)return reply(req,{error:"You cannot replace your own owner access."},400);
-    const {data:existing,error:existingError}=await db.from("cart_members").select("cart_id,role").eq("user_id",target.id).limit(1).maybeSingle();
+    const {data:existingMemberships,error:existingError}=await db.from("cart_members").select("cart_id,role").eq("user_id",target.id);
     if(existingError)throw existingError;
-    if(existing&&existing.cart_id!==cartId)return reply(req,{error:"This account is already linked to another cart."},409);
-    if(existing?.role==="owner")return reply(req,{error:"Owner access cannot be changed through staff invitations."},409);
+    if((existingMemberships||[]).some(m=>m.cart_id!==cartId))return reply(req,{error:"This account is already linked to another cart."},409);
+    if((existingMemberships||[]).some(m=>m.role==="owner"))return reply(req,{error:"Owner access cannot be changed through staff invitations."},409);
    }else{
     const {data,error}=await db.auth.admin.inviteUserByEmail(email);
     if(error)throw error;
