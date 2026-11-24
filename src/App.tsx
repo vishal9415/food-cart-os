@@ -6,6 +6,7 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { calculateCartTotal, getUnavailableCartItems, restoreCart, serializeCart, setCartItemQuantity } from "./cartRules";
 import { getOrCreateStoredValue } from "./storageRules";
 import { buildOrderCursorFilter, mergeOrderHistory } from "./orderRules";
+import { restoreReceipt, serializeReceipt } from "./receiptRules";
 
 type MenuItem = { id:string; name:string; description:string|null; price:number; is_available:boolean; category_id:string|null; category?:{name:string}|null };
 type MenuCategory = {id:string;name:string};
@@ -13,6 +14,7 @@ type Order = { id:string; customer_session_id?:string|null; order_number:number;
 function customerCartKey(){const parts=window.location.pathname.split("/");return parts[1]==="c"&&parts[2]?parts[2]:"the-food-cart";}
 function customerBasketKey(){return "food-cart-basket:"+customerCartKey();}
 function restoreCustomerBasket(){try{return restoreCart(localStorage.getItem(customerBasketKey()));}catch{return {};}}
+function restoreLastOrder(){const key="food-cart-last-order:"+customerCartKey();try{const raw=localStorage.getItem(key);const receipt=restoreReceipt(raw);if(!receipt&&raw)localStorage.removeItem(key);return receipt;}catch{return null;}}
 const volatileSessionTokens=new Map<string,string>();
 const volatileCheckoutRequestIds=new Map<string,string>();
 function getCustomerSessionToken(){const key="food-cart-session-token:"+customerCartKey();return getOrCreateStoredValue(key,()=>Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,"0")).join(""),volatileSessionTokens,()=>window.localStorage);}
@@ -39,7 +41,7 @@ export default function App(){
  const [customer,setCustomer]=useState(""); const [phone,setPhone]=useState("");
  const [busy,setBusy]=useState(false); const [notice,setNotice]=useState("");
  const [customerOrders,setCustomerOrders]=useState<any[]>([]);
- const [lastOrder,setLastOrder]=useState<any>(()=>{try{return JSON.parse(localStorage.getItem("food-cart-last-order:"+customerCartKey())||"null")}catch{return null}});
+ const [lastOrder,setLastOrder]=useState<any>(restoreLastOrder);
  const [tab,setTab]=useState("Orders"); const [search,setSearch]=useState(""); const [selectedCategory,setSelectedCategory]=useState("all"); const [queueFilter,setQueueFilter]=useState("active"); const [orderSearch,setOrderSearch]=useState("");
  const [storeName,setStoreName]=useState("The Food Cart");
  const [storeOpen,setStoreOpen]=useState(true);
@@ -221,7 +223,7 @@ export default function App(){
    }
    const receipt={...data.order,created_at:new Date().toISOString(),customer_name:customer.trim()||"Guest"};
    setLastOrder(receipt);
-   try{localStorage.setItem("food-cart-last-order:"+customerCartKey(),JSON.stringify(receipt));}catch{}
+   try{localStorage.setItem("food-cart-last-order:"+customerCartKey(),serializeReceipt(receipt));}catch{}
    try{localStorage.removeItem("food-cart-pending-checkout:"+customerCartKey());}catch{}
    setNotice((data.replayed?"We found your previous order; no duplicate was created. ":"Order placed! ")+"Order #"+data.order.order_number+" · Pickup token "+data.order.pickup_token);
    void loadCustomerOrders();
