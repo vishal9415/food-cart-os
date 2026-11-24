@@ -32,7 +32,7 @@ export default function App(){
  const [cartId,setCartId]=useState<string|null>(null);
  const [cartInfo,setCartInfo]=useState<any>(null);
  const [cartRole,setCartRole]=useState<string|null>(null);
- const [cartSlug]=useState(()=>{const match=window.location.pathname.match(/^\/c\/([^/]+)/);return match?.[1]||"the-food-cart";});
+ const [cartSlug]=useState(()=>{const match=window.location.pathname.match(/^\/c\/([^/]+)/);return match?.[1]||(window.location.pathname.startsWith("/owner")?"":"the-food-cart");});
  const [prepMinutes,setPrepMinutes]=useState(20);
  const [settingsName,setSettingsName]=useState("The Food Cart");
  const [staff,setStaff]=useState<any[]>([]);
@@ -45,6 +45,7 @@ export default function App(){
  async function loadMenu(targetCartId?:string){
   if(!supabase)return;
   let activeCartId=targetCartId||cartId;
+  if(!activeCartId&&!cartSlug)return;
   if(!activeCartId){const {data:found,error:cartError}=await supabase.from("carts").select("id,name,slug").eq("slug",cartSlug).eq("is_active",true).maybeSingle();if(cartError||!found){setNotice("This food cart link is unavailable.");return;}activeCartId=found.id;setCartId(found.id);setCartInfo(found);}
   const [{data,error},{data:settings},{data:cats}]=await Promise.all([
    supabase.from("menu_items").select("id,name,description,price,is_available,category_id,category:menu_categories(name)").eq("cart_id",activeCartId).order("display_order"),
