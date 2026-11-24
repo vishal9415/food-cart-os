@@ -96,6 +96,7 @@ export default function App(){
  async function loadOrders(){
   if(!supabase||!user||!cartId)return;
   const requestSequence=++ordersLoadSequence.current;
+  setLoadingOlderOrders(false);
   const {data,error,count}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)",{count:"exact"}).eq("cart_id",cartId).order("created_at",{ascending:false}).range(0,99);
   if(requestSequence!==ordersLoadSequence.current)return;
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
