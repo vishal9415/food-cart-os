@@ -19,7 +19,8 @@
     "@capacitor/core": "^7.4.3",
     "qrcode": "^1.5.4",
     "@capacitor/android": "^7.4.3",
-    "@capacitor/ios": "^7.4.3"
+    "@capacitor/ios": "^7.4.3",
+    "@capacitor/app": "^7.0.1"
   },
   "devDependencies": {
     "@types/react": "19.0.8",
