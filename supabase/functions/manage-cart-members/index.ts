@@ -29,12 +29,19 @@ Deno.serve(async(req:Request)=>{
    if(!["operator","manager"].includes(role))return reply(req,{error:"Choose Operator or Manager access."},400);
    let target:any=null;
    for(let page=1;page<=20&&!target;page++){const {data,error}=await db.auth.admin.listUsers({page,perPage:100});if(error)throw error;target=data.users.find(u=>(u.email||"").toLowerCase()===email)||null;if(data.users.length<100)break;}
-   if(!target){const {data,error}=await db.auth.admin.inviteUserByEmail(email);if(error)throw error;target=data.user;}
+   // Validate an existing account's access before sending any invitation email.
+   if(target){
+    if(target.id===actor.id)return reply(req,{error:"You cannot replace your own owner access."},400);
+    const {data:existing,error:existingError}=await db.from("cart_members").select("cart_id,role").eq("user_id",target.id).limit(1).maybeSingle();
+    if(existingError)throw existingError;
+    if(existing&&existing.cart_id!==cartId)return reply(req,{error:"This account is already linked to another cart."},409);
+    if(existing?.role==="owner")return reply(req,{error:"Owner access cannot be changed through staff invitations."},409);
+   }else{
+    const {data,error}=await db.auth.admin.inviteUserByEmail(email);
+    if(error)throw error;
+    target=data.user;
+   }
    if(!target)return reply(req,{error:"We could not create the invitation."},500);
-   if(target.id===actor.id)return reply(req,{error:"You cannot replace your own owner access."},400);
-   const {data:existing}=await db.from("cart_members").select("cart_id,role").eq("user_id",target.id).limit(1).maybeSingle();
-   if(existing&&existing.cart_id!==cartId)return reply(req,{error:"This account is already linked to another cart."},409);
-   if(existing?.role==="owner")return reply(req,{error:"Owner access cannot be changed through staff invitations."},409);
    const {error}=await db.from("cart_members").upsert({cart_id:cartId,user_id:target.id,role},{onConflict:"cart_id,user_id"});
    if(error)throw error;
    return reply(req,{success:true,email,role});
