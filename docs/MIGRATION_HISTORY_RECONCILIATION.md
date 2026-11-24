@@ -37,6 +37,7 @@ The production Supabase project has these applied migration versions:
 - 20261124094849 — enforce_order_session_and_audit_scope
 - 20261124095423 — index_order_queue_cursor
 - 20261124095911 — create_customer_session_atomically_with_checkout
+- 20261124100235 — index_tenant_scoped_foreign_keys
 
 ## Missing source files
 
