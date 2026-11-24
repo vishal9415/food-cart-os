@@ -22,14 +22,13 @@
 - [x] Cart-scoped category, session and order-audit foreign-key integrity
 - [x] Owner order-history cursor pagination with matching database index
 - [x] Browser storage fallback for checkout session/request IDs
-- [x] Automated regression tests for basket and browser-storage edge cases
+- [x] Automated regression tests for basket, browser storage, receipt expiry and order pagination
 - [x] Production Vercel project linked to GitHub main and deployed successfully
 - [x] Production QR base URL configured as https://food-cart-os.vercel.app
 - [x] Edge Function CORS restricted to production, native app and local development origins
-- [ ] End-to-end acceptance test with a newly registered owner and a real test cart
 - [x] Configure Supabase Auth site URL and allowed redirect URLs for production, including `foodcartos://auth/callback`
 - [ ] Enable leaked-password protection in Supabase Auth (blocked by current plan capability)
-- [ ] Complete production end-to-end acceptance test on a dedicated test cart
+- [ ] Complete one production end-to-end acceptance test with a newly registered owner and a dedicated test cart
 - [ ] Verify automated backups and complete a restore drill
 - [ ] Add production monitoring and alerting
 - [ ] Deploy latest main commit after Vercel's 100-deploy/24-hour quota resets
