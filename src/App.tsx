@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 type MenuItem = { id:string; name:string; description:string|null; price:number; is_available:boolean; category_id:string|null; category?:{name:string}|null };
 type MenuCategory = {id:string;name:string};
 type Order = { id:string; customer_session_id?:string|null; order_number:number; customer_name:string|null; customer_phone:string|null; status:string; payment_status:string; total_amount:number; pickup_token:string|null; created_at:string; order_items:{id:string;item_name:string;quantity:number;line_total:number;status:string}[] };
-function customerCartKey(){const slug=window.location.pathname.match(/^\\/c\\/([^/]+)/)?.[1]||"the-food-cart";return slug;}
+function customerCartKey(){const parts=window.location.pathname.split("/");return parts[1]==="c"&&parts[2]?parts[2]:"the-food-cart";}
 function getCustomerSessionToken(){const key="food-cart-session-token:"+customerCartKey();let token=localStorage.getItem(key);if(!token){const bytes=crypto.getRandomValues(new Uint8Array(32));token=Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join("");localStorage.setItem(key,token);}return token;}
 function getPendingCheckoutRequestId(){const key="food-cart-pending-checkout:"+customerCartKey();let id=localStorage.getItem(key);if(!id){id=crypto.randomUUID();localStorage.setItem(key,id);}return id;}
 function elapsedLabel(value:string){const mins=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/60000));if(mins<1)return "Just now";if(mins<60)return mins+" min ago";const hours=Math.floor(mins/60);return hours+" hr "+(mins%60)+" min ago";}
