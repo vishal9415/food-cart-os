@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { calculateCartTotal, getUnavailableCartItems, restoreCart, serializeCart, setCartItemQuantity } from "./cartRules";
+import { getOrCreateStoredValue } from "./storageRules";
 
 type MenuItem = { id:string; name:string; description:string|null; price:number; is_available:boolean; category_id:string|null; category?:{name:string}|null };
 type MenuCategory = {id:string;name:string};
@@ -11,8 +12,10 @@ type Order = { id:string; customer_session_id?:string|null; order_number:number;
 function customerCartKey(){const parts=window.location.pathname.split("/");return parts[1]==="c"&&parts[2]?parts[2]:"the-food-cart";}
 function customerBasketKey(){return "food-cart-basket:"+customerCartKey();}
 function restoreCustomerBasket(){try{return restoreCart(localStorage.getItem(customerBasketKey()));}catch{return {};}}
-function getCustomerSessionToken(){const key="food-cart-session-token:"+customerCartKey();let token=localStorage.getItem(key);if(!token){const bytes=crypto.getRandomValues(new Uint8Array(32));token=Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join("");localStorage.setItem(key,token);}return token;}
-function getPendingCheckoutRequestId(){const key="food-cart-pending-checkout:"+customerCartKey();let id=localStorage.getItem(key);if(!id){id=crypto.randomUUID();localStorage.setItem(key,id);}return id;}
+const volatileSessionTokens=new Map<string,string>();
+const volatileCheckoutRequestIds=new Map<string,string>();
+function getCustomerSessionToken(){const key="food-cart-session-token:"+customerCartKey();return getOrCreateStoredValue(key,()=>Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,"0")).join(""),volatileSessionTokens,()=>window.localStorage);}
+function getPendingCheckoutRequestId(){const key="food-cart-pending-checkout:"+customerCartKey();return getOrCreateStoredValue(key,()=>crypto.randomUUID(),volatileCheckoutRequestIds,()=>window.localStorage);}
 function elapsedLabel(value:string){const mins=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/60000));if(mins<1)return "Just now";if(mins<60)return mins+" min ago";const hours=Math.floor(mins/60);return hours+" hr "+(mins%60)+" min ago";}
 const money = (n:number) => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(n);
 const authRedirectUrl = () => Capacitor.isNativePlatform() ? "foodcartos://auth/callback" : window.location.origin + "/owner";
