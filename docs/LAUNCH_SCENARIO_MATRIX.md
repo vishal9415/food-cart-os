@@ -20,7 +20,7 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Customer opens two different cart QR links on the same device | Each cart has an independent basket and order session | Manual |
 | Customer removes the final item | Basket becomes empty and checkout is unavailable | Automated basket rules |
 | Customer quantity reaches 999 or attempts 1,000 | UI caps quantity at 999; server remains the final validator | Automated basket rules |
-| Customer tries to order 31 distinct items | Checkout rejects the request without creating a partial order | Manual/API |
+| Customer tries to add more than 30 distinct menu items | Basket explains the 30-line limit and disables checkout; the server independently rejects crafted requests | UI + database checkout validation |
 | Customer double-clicks Place Order | Button is busy/disabled; one order is created | Manual |
 | Network drops after the server creates the order but before the response arrives | Retry uses the same request ID and returns the existing order instead of creating a duplicate | Manual/API |
 | Customer has no name or phone | Order can still be placed; both fields remain optional | Manual |
