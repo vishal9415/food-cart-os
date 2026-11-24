@@ -27,6 +27,9 @@ Deno.serve(async(req:Request)=>{
    }
    return Response.json({error:"Could not start checkout. Please try again."},{status:500,headers:cors});
   }
+  stage="checkout_rate_limit"; const {count:recentRequests,error:rateError}=await db.from("guest_order_requests").select("id",{count:"exact",head:true}).eq("customer_session_id",session.id).gte("created_at",new Date(Date.now()-60_000).toISOString());
+  if(rateError){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:"Checkout is temporarily unavailable. Please try again."},{status:503,headers:cors});}
+  if((recentRequests||0)>5){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:"Too many checkout attempts. Wait a minute and try again."},{status:429,headers:cors});}
   stage="create_order_rpc"; const {data:order,error}=await db.rpc("create_guest_order",{p_cart_id:cartId,p_customer:{name:typeof customer.name==="string"?customer.name.slice(0,120):"",phone:typeof customer.phone==="string"?customer.phone.slice(0,30):"",email:typeof customer.email==="string"?customer.email.slice(0,254):""},p_items:clean,p_notes:notes});
   if(error){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:error.message},{status:400,headers:cors});}
   stage="save_checkout_receipt"; const {error:saveError}=await db.from("guest_order_requests").update({order_id:order.id}).eq("id",reservation.id);
