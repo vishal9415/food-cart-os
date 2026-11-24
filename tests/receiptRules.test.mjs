@@ -18,5 +18,6 @@ test("receipt expires after 30 days", () => {
 test("malformed, legacy and future-dated receipts are rejected", () => {
   assert.equal(restoreReceipt("not-json", 1_000_000), null);
   assert.equal(restoreReceipt(JSON.stringify({ id: "legacy" }), 1_000_000), null);
+  assert.deepEqual(restoreReceipt(JSON.stringify({ id: "legacy-valid", created_at: new Date(1_000_000).toISOString() }), 1_000_000 + DAY), { id: "legacy-valid", created_at: new Date(1_000_000).toISOString() });
   assert.equal(restoreReceipt(serializeReceipt({ id: "future" }, 2_000_000), 1_000_000), null);
 });
