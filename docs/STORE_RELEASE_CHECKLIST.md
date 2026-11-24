@@ -16,6 +16,8 @@
 - [x] Tenant-aware RLS and cart-scoped customer order recovery
 - [x] Checkout idempotency and per-session/cart rate limits
 - [x] Customer order/session association and 30-day browser history
+- [x] Atomic customer-session creation with checkout; rejected attempts leave no orphan sessions
+- [x] Customer-facing 30-distinct-item order limit
 - [x] Cart-scoped category, session and order-audit foreign-key integrity
 - [x] Owner order-history cursor pagination with matching database index
 - [x] Browser storage fallback for checkout session/request IDs
