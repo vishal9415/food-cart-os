@@ -75,7 +75,7 @@ Publish both documents at stable public URLs and link them from the product/stor
 - Set an owner for monitoring order creation, Edge Function failures and authentication issues.
 - Define a support process for missing orders, incorrect menu prices, pickup disputes and staff access.
 - Keep a rollback reference to the last known-good Vercel production deployment.
-- The latest successful production deployment is commit `e67d21a2` (deployment `dpl_79GqJaqE8WJYWSXjaPPcs9tuhHKq`, READY). The current `main` commit is `6e8170f8`; it is ahead of production. A deployment attempt returned Vercel HTTP 402 for the `api-deployments-young-hobby-team-24h` limit with a 24-hour retry window ending no earlier than `2026-11-25T10:13:33Z` (15:43 IST). No local Vercel CLI or linked project directory is available for the CLI fallback.
+- The latest successful production deployment is commit `e67d21a2` (deployment `dpl_79GqJaqE8WJYWSXjaPPcs9tuhHKq`, READY). The latest tested application-code commit is `6e8170f8`, which is ahead of production. A deployment attempt returned Vercel HTTP 402 for the `api-deployments-young-hobby-team-24h` limit with a 24-hour retry window ending no earlier than `2026-11-25T10:13:33Z` (15:43 IST). No local Vercel CLI or linked project directory is available for the CLI fallback.
 
 ## Mobile app store track
 
