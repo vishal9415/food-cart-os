@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { calculateCartTotal, getUnavailableCartItems, restoreCart, serializeCart, setCartItemQuantity } from "./cartRules";
 import { getOrCreateStoredValue } from "./storageRules";
+import { buildOrderCursorFilter, mergeOrderHistory } from "./orderRules";
 
 type MenuItem = { id:string; name:string; description:string|null; price:number; is_available:boolean; category_id:string|null; category?:{name:string}|null };
 type MenuCategory = {id:string;name:string};
@@ -105,12 +106,7 @@ export default function App(){
   if(requestSequence!==ordersLoadSequence.current)return;
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
   const newest=(data||[]) as Order[];
-  setOrders(current=>{
-   const newestIds=new Set(newest.map(order=>order.id));
-   const cursor=newest[newest.length-1];
-   const older=current.filter(order=>!newestIds.has(order.id)&&cursor&&(order.created_at<cursor.created_at||(order.created_at===cursor.created_at&&order.id<cursor.id)));
-   return [...newest,...older];
-  });
+  setOrders(current=>mergeOrderHistory(newest,current));
   setHasMoreOrders((data||[]).length===100);
  }
  async function loadOlderOrders(){
@@ -120,13 +116,11 @@ export default function App(){
   const requestSequence=++ordersLoadSequence.current;
   setLoadingOlderOrders(true);
   try{
-   const cursorFilter="created_at.lt."+cursor.created_at+",and(created_at.eq."+cursor.created_at+",id.lt."+cursor.id+")";
+   const cursorFilter=buildOrderCursorFilter(cursor);
    const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").eq("cart_id",cartId).or(cursorFilter).order("created_at",{ascending:false}).order("id",{ascending:false}).range(0,99);
    if(requestSequence!==ordersLoadSequence.current)return;
    if(error){setNotice("Older orders could not be loaded: "+error.message);return;}
-   const existing=new Set(orders.map(order=>order.id));
-   const additional=(data||[]).filter((order:any)=>!existing.has(order.id)) as any[];
-   setOrders(current=>[...current,...additional]);
+   setOrders(current=>mergeOrderHistory(current,[...current,...((data||[]) as Order[])]));
    setHasMoreOrders((data||[]).length===100);
   }finally{
    if(requestSequence===ordersLoadSequence.current)setLoadingOlderOrders(false);
