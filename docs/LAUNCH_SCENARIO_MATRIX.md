@@ -12,6 +12,7 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Owner pauses orders while customer is browsing | Server rejects checkout; customer receives a clear message and refreshed store state | Manual |
 | Cart is deactivated while customer is browsing | Checkout is rejected; no order is created; customer is told the link is unavailable | Manual |
 | Customer refreshes or closes/reopens the tab | Basket restores for the same cart and browser for up to 30 days | Automated basket rules + manual |
+| Customer receipt is older than 30 days | Local receipt is cleared; expired session history is unavailable while owner order records remain | Automated receipt tests + database cleanup test |
 | Browser blocks local storage or storage quota is full | Checkout can use an in-memory session/request ID for the current page; reload persistence is unavailable but the customer is not blocked from ordering | Automated storage tests |
 | Customer returns to the same cart within 30 days | Orders placed in that browser session appear in recent order history; another cart session never exposes them | Rollback-only database checkout test + manual |
 | Customer session passes 30 days without another order | Customer history link and idempotency rows are cleaned up; order records remain visible to the cart owner | Cron job + rollback-only database test |
