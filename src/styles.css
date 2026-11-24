@@ -44,3 +44,7 @@
 .queue-filters button{border:1px solid #dfe8e0;background:white;color:#52685a;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:600}
 .queue-filters button.active{background:#e8f1eb;border-color:#c9ddce;color:#22523a}
 @media(max-width:600px){.queue-tools{align-items:stretch;flex-direction:column}.queue-tools>input{max-width:none;width:100%}}
+
+.qr-panel{margin-top:20px;display:flex;justify-content:center;text-align:center}
+.qr-panel h3{margin:0 0 6px}.qr-panel p{color:#73847a;margin:6px 0 14px}.cart-qr{display:block;width:min(280px,100%);aspect-ratio:1;object-fit:contain;background:#fff;padding:12px;border:1px solid #e2eae4;border-radius:14px;margin:12px auto}.qr-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}.qr-download{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:10px;text-decoration:none;font-weight:700}.qr-panel small{overflow-wrap:anywhere}.login .outline.wide{width:100%;margin-top:10px}
+@media print{body *{visibility:hidden!important}.qr-panel,.qr-panel *{visibility:visible!important}.qr-panel{position:absolute;inset:0;margin:0!important;box-shadow:none!important;border:0!important;width:100%;display:flex;justify-content:center;align-items:center}.cart-qr{width:75vw;max-width:480px}}
