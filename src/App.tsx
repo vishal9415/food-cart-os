@@ -231,7 +231,7 @@ export default function App(){
    setCustomer("");
    setPhone("");
   }catch{
-   setNotice("We couldn't confirm the order because the connection was interrupted. Your basket is saved; retry safely to check the order status.");
+   setNotice("We couldn't confirm the order because the connection was interrupted. Keep this page open and retry so we can reuse the same request ID.");
   }finally{
    setBusy(false);
   }
