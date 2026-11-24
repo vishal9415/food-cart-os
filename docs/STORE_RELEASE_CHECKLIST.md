@@ -10,6 +10,8 @@
 - [x] Cash-at-pickup checkout; no online payment collection
 - [x] QR display, PNG download and print layout
 - [x] Android and iOS Capacitor projects build in CI
+- [x] Native owner apps launch directly into the owner workspace
+- [x] Native authentication callback handling implemented for email confirmation and password recovery
 - [x] SPA rewrites for /owner and /c/:slug routes
 - [x] Tenant-aware RLS and cart-scoped customer order recovery
 - [x] Checkout idempotency and per-session rate limit
@@ -17,7 +19,7 @@
 - [x] Production QR base URL configured as https://food-cart-os.vercel.app
 - [x] Edge Function CORS restricted to production, native app and local development origins
 - [ ] End-to-end acceptance test with a newly registered owner and a real test cart
-- [ ] Configure Supabase Auth site URL and allowed redirect URLs for production
+- [ ] Configure Supabase Auth site URL and allowed redirect URLs for production, including `foodcartos://auth/callback`
 - [ ] Enable leaked-password protection in Supabase Auth
 - [ ] Add production monitoring, alerting and automated backups review
 
