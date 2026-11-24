@@ -34,7 +34,7 @@ The production Supabase project has these applied migration versions:
 - 20261124084042 — protect_orders_from_direct_staff_mutation
 - 20261124090036 — enforce_single_cart_membership_per_user
 - 20261124094717 — enforce_menu_category_cart_scope
-- 20261124095200 — enforce_order_session_and_audit_scope
+- 20261124094849 — enforce_order_session_and_audit_scope
 
 ## Missing source files
 
@@ -52,4 +52,4 @@ The production database confirms these versions are applied. Their original SQL 
 
 **Do not run `supabase db push` or attempt a fresh database bootstrap from this repository until the five missing migrations are recovered or a reviewed schema baseline is created.**
 
-The later migration files, including `20261124090036_enforce_single_cart_membership_per_user.sql`, `20261124100000_enforce_menu_category_cart_scope.sql`, and `20261124101500_enforce_order_session_and_audit_scope.sql`, are aligned with the currently applied production migration versions. The production migration ledger assigns its own timestamp versions to newly applied migrations; use `supabase migration list` before any future push to confirm local/remote alignment.
+The later migration files, including `20261124090036_enforce_single_cart_membership_per_user.sql`, `20261124094717_enforce_menu_category_cart_scope.sql`, and `20261124094849_enforce_order_session_and_audit_scope.sql`, are aligned with the currently applied production migration versions. The source migration filenames now match the versions recorded in the production migration ledger, so the two new migrations will not be mistaken for unapplied changes by the Supabase CLI.
