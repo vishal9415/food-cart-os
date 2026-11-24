@@ -100,7 +100,13 @@ export default function App(){
   const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").eq("cart_id",cartId).order("created_at",{ascending:false}).order("id",{ascending:false}).range(0,99);
   if(requestSequence!==ordersLoadSequence.current)return;
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
-  setOrders((data||[]) as any);
+  const newest=(data||[]) as Order[];
+  setOrders(current=>{
+   const newestIds=new Set(newest.map(order=>order.id));
+   const cursor=newest[newest.length-1];
+   const older=current.filter(order=>!newestIds.has(order.id)&&cursor&&(order.created_at<cursor.created_at||(order.created_at===cursor.created_at&&order.id<cursor.id)));
+   return [...newest,...older];
+  });
   setHasMoreOrders((data||[]).length===100);
  }
  async function loadOlderOrders(){
