@@ -130,7 +130,7 @@ export default function App(){
   if(!(transitions[current]||[]).includes(next)){setNotice("Items must move in order: Pending → Preparing → Ready → Served.");return;}
   const {data,error}=await supabase.rpc("update_order_item_status",{p_order_item_id:itemId,p_next_status:next});
   if(error){setNotice(error.message.includes("INVALID_STATUS_TRANSITION")?"This item was updated by another team member. Refresh the order and try again.":error.message);return;}
-  setNotice("Item updated. Order status: "+String(data?.order_status||"updated").replaceAll("_"," ")+".");
+  setNotice("Item updated. Order status: "+String(data?.order_status||"updated").replace(/_/g," ")+".");
   void loadOrders();
  }
  function startEditItem(i:MenuItem){setEditingItem(i.id);setItemName(i.name);setItemDescription(i.description||"");setItemPrice(String(i.price));setItemCategory(i.category_id||"");}
