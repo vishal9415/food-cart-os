@@ -44,16 +44,17 @@ Android builds require Android Studio and an Android SDK. iOS builds require mac
 ## Multi-cart data model
 
 - `carts` is the tenant record and owns the public slug.
-- `cart_members` assigns owner/manager/operator access per cart.
+- `cart_members` assigns owner/manager/operator access per cart. The owner-scoped `manage-cart-members` Edge Function handles invitations and membership changes.
 - `menu_categories`, `menu_items`, `store_settings` and `orders` carry `cart_id`.
-- Guest order sessions are scoped to a cart so one cart cannot read another cart's order history.
+- Guest order sessions and saved receipts are scoped to a cart so one cart cannot read another cart's order history.
+- Cart membership checks use a private-schema security-definer helper; guest session/idempotency tables remain inaccessible to anon/authenticated API roles.
 - Menu pricing and order totals are calculated server-side.
 - Cart creation is handled by the `create-cart` Edge Function and a privileged database RPC.
 - Guest checkout is handled by `create-guest-order`; customer order recovery is handled by `get-customer-orders`.
 
 ## Current status
 
-The multi-cart schema, owner signup/cart creation flow, QR generation and cart-scoped checkout foundation are being integrated. Existing order queue, partial item fulfilment, menu management, store pause/resume and sales reporting remain in the application. Native platform projects have not yet been generated or submitted to either store.
+The multi-cart schema, owner signup/cart creation, password recovery, QR display/print, cart-scoped checkout, cart-owner team access and date-range sales reporting are implemented. Existing order queue, partial item fulfilment, menu management, store pause/resume and customer order recovery remain in the application. Android debug and iOS simulator build pipelines are configured; store-signed release builds and submission are still pending.
 
 ## Supabase project
 
