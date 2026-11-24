@@ -1,41 +1,63 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info","Access-Control-Allow-Methods":"POST, OPTIONS"};
-async function sha256(value:string){const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");}
+const allowedOrigins=new Set([
+ "https://food-cart-os.vercel.app",
+ "https://food-cart-os-vishal9415.vercel.app",
+ "https://food-cart-os-git-main-vishal9415.vercel.app",
+ "https://localhost","capacitor://localhost","http://localhost:5173","http://127.0.0.1:5173"
+]);
+function corsHeaders(req:Request){
+ const origin=req.headers.get("Origin")||"";
+ const headers:Record<string,string>={"Vary":"Origin","Access-Control-Allow-Headers":"authorization, apikey, content-type, x-client-info","Access-Control-Allow-Methods":"POST, OPTIONS"};
+ if(allowedOrigins.has(origin))headers["Access-Control-Allow-Origin"]=origin;
+ return headers;
+}
+const reply=(req:Request,body:unknown,status=200)=>Response.json(body,{status,headers:corsHeaders(req)});
+async function sha256(value:string){
+ const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+ return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
 Deno.serve(async(req:Request)=>{
- let stage="request";
- if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
- if(req.method!=="POST")return Response.json({error:"Method not allowed"},{status:405,headers:cors});
+ if(req.method==="OPTIONS")return new Response("ok",{headers:corsHeaders(req)});
+ if(req.method!=="POST")return reply(req,{error:"Method not allowed"},405);
  try{
   const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if(!url||!key)return Response.json({error:"Checkout service is not configured"},{status:503,headers:cors});
-  stage="parse_body"; const body=await req.json(),customer=body?.customer&&typeof body.customer==="object"?body.customer:{},items=body?.items,notes=typeof body?.notes==="string"?body.notes.slice(0,500):null,token=typeof body?.session_token==="string"?body.session_token:"",requestId=typeof body?.request_id==="string"?body.request_id:"",cartId=typeof body?.cart_id==="string"?body.cart_id:"";
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cartId))return Response.json({error:"This cart link is invalid. Scan the QR code again."},{status:400,headers:cors});
-  if(!/^[A-Za-z0-9_-]{40,200}$/.test(token))return Response.json({error:"Customer session is invalid. Refresh the page and try again."},{status:400,headers:cors});
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId))return Response.json({error:"Checkout request is invalid. Please try again."},{status:400,headers:cors});
-  if(!Array.isArray(items)||items.length<1||items.length>30)return Response.json({error:"Add between 1 and 30 items"},{status:400,headers:cors});
-  const clean=items.map((item:any)=>({menu_item_id:String(item?.menu_item_id??""),quantity:Number(item?.quantity)}));
-  if(clean.some((item:any)=>!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999))return Response.json({error:"One or more order items are invalid"},{status:400,headers:cors});
-  stage="create_session"; const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}}),hash=await sha256(token);
-  const {data:session,error:sessionError}=await db.from("customer_sessions").upsert({token_hash:hash,cart_id:cartId,expires_at:new Date(Date.now()+30*24*60*60*1000).toISOString()},{onConflict:"token_hash,cart_id"}).select("id").single();
-  if(sessionError||!session)return Response.json({error:"Could not create your order session"},{status:500,headers:cors});
-  stage="reserve_checkout"; const {data:reservation,error:reserveError}=await db.from("guest_order_requests").insert({customer_session_id:session.id,request_id:requestId}).select("id").single();
-  if(reserveError){
-   if(reserveError.code==="23505"){
-    const {data:existing}=await db.from("guest_order_requests").select("order_id").eq("customer_session_id",session.id).eq("request_id",requestId).maybeSingle();
-    if(existing?.order_id){const {data:prior}=await db.from("orders").select("id,order_number,pickup_token,subtotal,tax_amount,total_amount,status").eq("id",existing.order_id).maybeSingle();if(prior)return Response.json({order:prior,customer_session_id:session.id,replayed:true},{status:200,headers:cors});}
-    return Response.json({error:"Your order is still being processed. Please check Recent orders in a moment."},{status:409,headers:cors});
-   }
-   return Response.json({error:"Could not start checkout. Please try again."},{status:500,headers:cors});
+  if(!url||!key)return reply(req,{error:"Checkout service is not configured"},503);
+  const body=await req.json();
+  const customer=body?.customer&&typeof body.customer==="object"?body.customer:{};
+  const rawItems=body?.items,notes=typeof body?.notes==="string"?body.notes.slice(0,500):null;
+  const token=typeof body?.session_token==="string"?body.session_token:"";
+  const requestId=typeof body?.request_id==="string"?body.request_id:"";
+  const cartId=typeof body?.cart_id==="string"?body.cart_id:"";
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if(!uuid.test(cartId))return reply(req,{error:"This cart link is invalid. Scan the QR code again."},400);
+  if(!/^[a-f0-9]{64}$/i.test(token))return reply(req,{error:"Customer session is invalid. Refresh the page and try again."},400);
+  if(!uuid.test(requestId))return reply(req,{error:"Checkout request is invalid. Please try again."},400);
+  if(!Array.isArray(rawItems)||rawItems.length<1||rawItems.length>30)return reply(req,{error:"Add between 1 and 30 items"},400);
+  const items=rawItems.map((item:any)=>({menu_item_id:String(item?.menu_item_id??""),quantity:Number(item?.quantity)}));
+  if(items.some((item:any)=>!uuid.test(item.menu_item_id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>999))return reply(req,{error:"One or more order items are invalid"},400);
+  const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
+  const tokenHash=await sha256(token);
+  const {data:session,error:sessionError}=await db.from("customer_sessions").upsert({
+   token_hash:tokenHash,cart_id:cartId,expires_at:new Date(Date.now()+30*24*60*60*1000).toISOString()
+  },{onConflict:"token_hash,cart_id"}).select("id").single();
+  if(sessionError||!session)return reply(req,{error:"Could not create your order session. Please refresh and try again."},503);
+  const {data,error}=await db.rpc("create_guest_order_idempotent",{
+   p_cart_id:cartId,p_customer:{
+    name:typeof customer.name==="string"?customer.name.trim().slice(0,120):"",
+    phone:typeof customer.phone==="string"?customer.phone.trim().slice(0,30):"",
+    email:typeof customer.email==="string"?customer.email.trim().slice(0,254):""
+   },p_items:items,p_notes:notes,p_session_id:session.id,p_request_id:requestId
+  });
+  if(error){
+   const message=error.message||"";
+   if(message.includes("RATE_LIMIT_SESSION"))return reply(req,{error:"Too many checkout attempts. Wait a minute and try again."},429);
+   if(message.includes("RATE_LIMIT_CART"))return reply(req,{error:"This cart is receiving many orders right now. Please wait a moment and try again."},429);
+   if(message.includes("CUSTOMER_SESSION_INVALID"))return reply(req,{error:"Customer session expired. Refresh the page and try again."},401);
+   return reply(req,{error:message.includes("not accepting orders")||message.includes("unavailable")?message:"We could not place your order. Please review your cart and try again."},400);
   }
-  stage="checkout_rate_limit"; const {count:recentRequests,error:rateError}=await db.from("guest_order_requests").select("id",{count:"exact",head:true}).eq("customer_session_id",session.id).gte("created_at",new Date(Date.now()-60_000).toISOString());
-  if(rateError){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:"Checkout is temporarily unavailable. Please try again."},{status:503,headers:cors});}
-  if((recentRequests||0)>5){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:"Too many checkout attempts. Wait a minute and try again."},{status:429,headers:cors});}
-  stage="create_order_rpc"; const {data:order,error}=await db.rpc("create_guest_order",{p_cart_id:cartId,p_customer:{name:typeof customer.name==="string"?customer.name.slice(0,120):"",phone:typeof customer.phone==="string"?customer.phone.slice(0,30):"",email:typeof customer.email==="string"?customer.email.slice(0,254):""},p_items:clean,p_notes:notes});
-  if(error){await db.from("guest_order_requests").delete().eq("id",reservation.id);return Response.json({error:error.message},{status:400,headers:cors});}
-  stage="save_checkout_receipt"; const {error:saveError}=await db.from("guest_order_requests").update({order_id:order.id}).eq("id",reservation.id);
-  if(saveError)return Response.json({order,warning:"Order created. Keep pickup token "+order.pickup_token+" while we finish saving your receipt."},{status:202,headers:cors});
-  stage="link_order_session"; const {error:linkError}=await db.from("orders").update({customer_session_id:session.id}).eq("id",order.id);
-  if(linkError)return Response.json({order,warning:"Order created. Keep your pickup token: "+order.pickup_token},{status:202,headers:cors});
-  return Response.json({order,customer_session_id:session.id},{status:201,headers:cors});
- }catch(err){console.error("create-guest-order failure",{stage,error:err instanceof Error?err.message:String(err)});return Response.json({error:"Checkout failed during "+stage+". Please try again.",stage},{status:500,headers:cors});}
+  return reply(req,{...data,customer_session_id:session.id},data?.replayed?200:201);
+ }catch(error){
+  console.error("create-guest-order failure",error instanceof Error?error.message:String(error));
+  return reply(req,{error:"Checkout is temporarily unavailable. Your cart is safe; please try again."},500);
+ }
 });
