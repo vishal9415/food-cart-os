@@ -9,3 +9,5 @@ Session restore ordering fix: 6761e3a6
 Native build validation: customer QR URL configuration and latest owner app changes.
 
 Native build validation: order pagination helpers and latest customer/owner polling behaviour.
+
+Native build validation: receipt expiry and latest pagination/session changes.
