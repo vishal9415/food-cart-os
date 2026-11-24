@@ -38,7 +38,7 @@ export default function App(){
  const [staff,setStaff]=useState<any[]>([]);
  const [inviteEmail,setInviteEmail]=useState("");
  const [inviteRole,setInviteRole]=useState("operator");
- const isAdmin=cartRole==="owner";
+ const isAdmin=cartRole==="owner"&&user?.app_metadata?.role==="admin";
  const total=useMemo(()=>menu.reduce((s,i)=>s+i.price*(cart[i.id]||0),0),[menu,cart]);
  const count=Object.values(cart).reduce((a,b)=>a+b,0);
  const salesToday=useMemo(()=>{const start=new Date();start.setHours(0,0,0,0);const todays=orders.filter(o=>new Date(o.created_at)>=start);const top=new Map<string,number>();todays.forEach(o=>o.order_items?.forEach(i=>top.set(i.item_name,(top.get(i.item_name)||0)+i.quantity)));return {count:todays.length,value:todays.reduce((sum,o)=>sum+Number(o.total_amount||0),0),items:[...top.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5)}},[orders]);
