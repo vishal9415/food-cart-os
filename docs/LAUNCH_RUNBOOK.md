@@ -17,7 +17,11 @@ This runbook covers the current production web launch. Mobile store submission i
 - Owners manage staff. Managers and operators manage menu, prices, availability, orders and store settings.
 - Customers order through a cart-specific QR page without creating an account.
 - Customer name and phone are optional. Phone is not an order lookup key and no OTP/SMS flow is used.
-- Customer order history is available only on the same browser/device, using a 30-day session. The list shows up to the 10 most recent orders, including completed orders.
+- Customer order history is available only on the same browser/device, using a 30-day session. The list shows up to the 10 most recent orders, including completed orders. Each new order is linked to the session in the database.
+- Basket state persists in the same browser for up to 30 days. Unavailable/deleted items remain visible and removable.
+- Checkout supports up to 30 distinct menu items and up to 999 units per item; both UI and server validate the limits.
+- If browser storage is blocked, checkout can continue with an in-memory session/request ID for the current page; basket and retry persistence across reloads are unavailable in that browser.
+- The owner queue loads the latest 100 orders and can load older history with cursor-based pagination. Search covers loaded orders only.
 - Payment is cash at pickup. Online payment is not implemented.
 
 ## Owner actions before a public launch
@@ -26,12 +30,12 @@ This runbook covers the current production web launch. Mobile store submission i
 
 In the Supabase dashboard for this project:
 
-- Set the Site URL to `https://food-cart-os.vercel.app`.
-- Add `https://food-cart-os.vercel.app/**` to the allowed redirect URLs (retain any required local development URLs separately).
-- Add `foodcartos://auth/callback` to the allowed redirect URLs for native Android/iOS owner-app email confirmation and password recovery.
-- Enable leaked-password protection in Auth password security settings.
+- [x] Site URL is set to `https://food-cart-os.vercel.app`.
+- [x] `https://food-cart-os.vercel.app/**` is in the allowed redirect URLs.
+- [x] `foodcartos://auth/callback` is in the allowed redirect URLs for native Android/iOS owner-app email confirmation and password recovery.
+- [ ] Enable leaked-password protection. The current Supabase plan does not expose this control; it remains a known security limitation.
 
-These settings are not currently editable through the connected project-management actions and require a project owner to change in the dashboard. The native callback URI must be present before testing email confirmation or password recovery inside either installed app.
+The redirect settings have been confirmed as configured. Email confirmation and password recovery still need an end-to-end test on web and native clients.
 
 ### 2. Complete one controlled end-to-end acceptance test
 
@@ -65,14 +69,21 @@ Publish both documents at stable public URLs and link them from the product/stor
 
 ### 4. Operations readiness
 
-- Confirm automated database backups and a restore procedure with the current Supabase plan.
+- [ ] Confirm automated database backups and complete a restore procedure with the current Supabase plan. The connected project tools do not expose backup/restore verification.
 - Set an owner for monitoring order creation, Edge Function failures and authentication issues.
 - Define a support process for missing orders, incorrect menu prices, pickup disputes and staff access.
 - Keep a rollback reference to the last known-good Vercel production deployment.
+- The latest successful production deployment is commit `85d9826` (deployment `dpl_DizEHZZiCVAVS3L4RbQ667mNhkHD`). The latest main commit is `85e59935`; Vercel currently blocks another deployment because the team exceeded 100 deployments in 24 hours. Retry after the 24-hour quota window.
 
 ## Mobile app store track
 
 The web application is deployed. The owner app launches directly into the owner workspace on native devices and uses the `foodcartos://auth/callback` scheme for authentication callbacks. Google Play and Apple App Store submission is not complete. Before store submission, complete the icon/splash assets, screenshots, listing text, legal URLs, publisher details, developer accounts, signing credentials, privacy/data-safety declarations and internal testing. A debug APK is not a store release artifact.
+
+## Data retention notes
+
+- Customer browser sessions expire after 30 days.
+- Order records, expired customer-session rows and checkout idempotency records do not currently have an automatic deletion schedule. Do not describe them as automatically deleted after 30 days.
+- The privacy-policy draft explicitly records this until a retention policy and cleanup process are approved.
 
 ## Known repository constraint
 
