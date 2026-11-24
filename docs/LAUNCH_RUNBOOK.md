@@ -83,9 +83,9 @@ The web application is deployed. The owner app launches directly into the owner 
 
 ## Data retention notes
 
-- Customer browser sessions expire after 30 days.
-- Order records, expired customer-session rows and checkout idempotency records do not currently have an automatic deletion schedule. Do not describe them as automatically deleted after 30 days.
-- The privacy-policy draft explicitly records this until a retention policy and cleanup process are approved.
+- Customer browser sessions expire 30 days after the most recent successful checkout.
+- A Supabase Cron job runs daily at 03:17 UTC to delete expired customer-session rows and their checkout-idempotency records. Order rows remain available to the cart owner; the session link is cleared when the session is deleted.
+- Order records do not currently have an automatic deletion schedule. The privacy-policy draft must not claim that orders are automatically deleted after 30 days.
 
 ## Known repository constraint
 
