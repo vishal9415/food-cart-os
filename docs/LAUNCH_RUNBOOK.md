@@ -19,7 +19,7 @@ This runbook covers the current production web launch. Mobile store submission i
 - Customer name and phone are optional. Phone is not an order lookup key and no OTP/SMS flow is used.
 - Customer order history is available only on the same browser/device, using a 30-day session. The list shows up to the 10 most recent orders, including completed orders. Each new order is linked to the session in the database.
 - Customer session creation and order creation now happen in one database transaction. Rejected checkout attempts do not leave orphan session rows. Checkout retries with the same request ID return the original order.
-- Basket state persists in the same browser for up to 30 days. Unavailable/deleted items remain visible and removable.
+- Basket state and the latest local receipt persist in the same browser for up to 30 days. Unavailable/deleted items remain visible and removable.
 - Checkout supports up to 30 distinct menu items and up to 999 units per item; both UI and server validate the limits.
 - If browser storage is blocked, checkout can continue with an in-memory session/request ID for the current page; basket and retry persistence across reloads are unavailable in that browser.
 - The owner queue loads the latest 100 orders and can load older history with cursor-based pagination. Search covers loaded orders only. Queue polling and realtime subscription run only while the Orders tab is open.
