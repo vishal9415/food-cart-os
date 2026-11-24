@@ -1,0 +1,1 @@
+create index if not exists guest_order_requests_session_created_idx on public.guest_order_requests(customer_session_id,created_at desc);
