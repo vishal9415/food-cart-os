@@ -1,6 +1,9 @@
 name: Native app build
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".native-build-trigger"]
 
 jobs:
   android-debug:
