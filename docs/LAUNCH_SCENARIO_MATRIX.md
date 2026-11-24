@@ -31,7 +31,7 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Staff tries to edit an order total or item directly | Database trigger rejects direct order mutation; approved status RPC remains available | Database security review |
 | One item in a multi-item order is ready while another is preparing | Parent order shows partial readiness; item statuses remain independent | Manual |
 | All items are served | Parent order moves to completed | Manual |
-| More than 500 orders exist | Historical order access must remain available; current UI list is limited to the newest 500 and needs pagination/archive before high-volume use | Known limitation |
+| More than 100 orders exist | Owner sees the newest 100 first and can load older orders in stable cursor-based pages without losing access to history | Manual regression |
 | Realtime subscription disconnects | Periodic refresh restores the latest order queue | Manual |
 
 ## Tenant isolation and security
@@ -60,6 +60,6 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 
 - Cash at pickup only; no online payment collection or reconciliation.
 - Customer order history is tied to the same browser/device and 30-day session; no phone-number lookup or OTP.
-- Owner order queue currently loads at most 500 recent orders. Add pagination before onboarding high-volume carts.
+- Owner order queue loads the newest 100 orders initially; older orders are available through cursor-based pagination.
 - Supabase leaked-password protection is disabled on the current plan; enable it if/when the project plan supports it.
 - Store listing publication and legal policy completion are separate from the web app deployment.
