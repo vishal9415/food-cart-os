@@ -97,25 +97,27 @@ export default function App(){
   if(!supabase||!user||!cartId)return;
   const requestSequence=++ordersLoadSequence.current;
   setLoadingOlderOrders(false);
-  const {data,error,count}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)",{count:"exact"}).eq("cart_id",cartId).order("created_at",{ascending:false}).range(0,99);
+  const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").eq("cart_id",cartId).order("created_at",{ascending:false}).order("id",{ascending:false}).range(0,99);
   if(requestSequence!==ordersLoadSequence.current)return;
   if(error){setNotice("Orders could not be loaded: "+error.message);return;}
   setOrders((data||[]) as any);
-  setHasMoreOrders((count||0)>((data||[]).length));
+  setHasMoreOrders((data||[]).length===100);
  }
  async function loadOlderOrders(){
   if(!supabase||!user||!cartId||loadingOlderOrders||!hasMoreOrders)return;
-  const offset=orders.length;
+  const cursor=orders[orders.length-1];
+  if(!cursor)return;
   const requestSequence=++ordersLoadSequence.current;
   setLoadingOlderOrders(true);
   try{
-   const {data,error,count}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)",{count:"exact"}).eq("cart_id",cartId).order("created_at",{ascending:false}).range(offset,offset+99);
+   const cursorFilter="created_at.lt."+cursor.created_at+",and(created_at.eq."+cursor.created_at+",id.lt."+cursor.id+")";
+   const {data,error}=await supabase.from("orders").select("id,customer_session_id,order_number,customer_name,customer_phone,status,payment_status,total_amount,pickup_token,created_at,order_items(id,item_name,quantity,line_total,status)").eq("cart_id",cartId).or(cursorFilter).order("created_at",{ascending:false}).order("id",{ascending:false}).range(0,99);
    if(requestSequence!==ordersLoadSequence.current)return;
    if(error){setNotice("Older orders could not be loaded: "+error.message);return;}
    const existing=new Set(orders.map(order=>order.id));
    const additional=(data||[]).filter((order:any)=>!existing.has(order.id)) as any[];
    setOrders(current=>[...current,...additional]);
-   setHasMoreOrders(offset+((data||[]).length)<(count||0));
+   setHasMoreOrders((data||[]).length===100);
   }finally{
    if(requestSequence===ordersLoadSequence.current)setLoadingOlderOrders(false);
   }
