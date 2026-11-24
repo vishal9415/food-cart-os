@@ -3,3 +3,5 @@ Build latest Food Cart OS native app display name and complete owner onboarding 
 Native auth deep-link update: 2026-11-24T14:38+05:30
 
 Auth callback build validation: f7dc86cc
+
+Session restore ordering fix: 6761e3a6
