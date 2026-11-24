@@ -21,6 +21,27 @@ jobs:
       - run: npm run build
       - run: npx cap add android
       - run: npx cap sync android
+      - name: Register Android authentication callback
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/src/main/AndroidManifest.xml")
+          text = path.read_text()
+          if 'android:scheme="foodcartos"' not in text:
+              marker = "</activity>"
+              index = text.find(marker)
+              if index < 0:
+                  raise SystemExit("Main activity closing tag not found")
+              intent_filter = """<intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="foodcartos" android:host="auth" android:pathPrefix="/callback" />
+                      </intent-filter>
+                      """
+              text = text[:index] + intent_filter + text[index:]
+              path.write_text(text)
+          PY
       - uses: gradle/actions/setup-gradle@v4
       - name: Build debug APK
         run: |
@@ -49,6 +70,16 @@ jobs:
       - run: npm run build
       - run: npx cap add ios
       - run: npx cap sync ios
+      - name: Register iOS authentication callback
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes:0:CFBundleURLSchemes:0" "$PLIST" >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.foodcart.owner.auth" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string foodcartos" "$PLIST"
+          fi
       - name: Build iOS simulator app
         run: xcodebuild -workspace ios/App/App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build
       - uses: actions/upload-artifact@v4
