@@ -3,6 +3,7 @@
 ## Product and engineering
 - [x] Owner sign-up, sign-in and password recovery
 - [x] One cart per owner account
+- [x] Database-enforced one-cart membership per user account
 - [x] Cart-specific owner/manager/operator membership
 - [x] Cart-specific menu, settings, orders and sales reporting
 - [x] Customer ordering remains a browser-based QR experience
