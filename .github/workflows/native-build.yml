@@ -21,8 +21,16 @@ jobs:
       - run: npm run build
       - run: npx cap add android
       - run: npx cap sync android
+      - uses: gradle/actions/setup-gradle@v4
       - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug
+        run: |
+          cd android
+          for attempt in 1 2 3; do
+            ./gradlew assembleDebug && exit 0
+            echo "Gradle dependency request failed; retrying in 20 seconds (attempt $attempt/3)."
+            sleep 20
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: food-cart-owner-android-debug
