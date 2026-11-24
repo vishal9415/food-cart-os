@@ -15,6 +15,7 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Browser blocks local storage or storage quota is full | Checkout can use an in-memory session/request ID for the current page; reload persistence is unavailable but the customer is not blocked from ordering | Automated storage tests |
 | Customer returns to the same cart within 30 days | Orders placed in that browser session appear in recent order history; another cart session never exposes them | Rollback-only database checkout test + manual |
 | Customer retries checkout with the same request ID | The same order is returned, the replay is marked, and no duplicate order/request record is created | Rollback-only database idempotency test |
+| Customer submits an invalid or rejected checkout with a new session token | The transaction rolls back and leaves no orphan customer-session row | Rollback-only database integration test |
 | Menu item is assigned a category from another cart | Database composite foreign key rejects the cross-cart category reference | Rollback-only database constraint test |
 | Owner deletes a menu category | Linked menu items retain their cart and become uncategorised rather than losing cart ownership | Rollback-only database constraint test |
 | Customer opens two different cart QR links on the same device | Each cart has an independent basket and order session | Manual |
