@@ -12,8 +12,10 @@ This is the release acceptance matrix for the QR customer flow and owner workspa
 | Owner pauses orders while customer is browsing | Server rejects checkout; customer receives a clear message and refreshed store state | Manual |
 | Cart is deactivated while customer is browsing | Checkout is rejected; no order is created; customer is told the link is unavailable | Manual |
 | Customer refreshes or closes/reopens the tab | Basket restores for the same cart and browser for up to 30 days | Automated basket rules + manual |
-| Customer returns to the same cart within 30 days | Orders placed in that browser session appear in recent order history; another cart session never exposes them | Database checkout test + manual |
-| Menu item is assigned a category from another cart | Database composite foreign key rejects the cross-cart category reference | Database constraint test |
+| Customer returns to the same cart within 30 days | Orders placed in that browser session appear in recent order history; another cart session never exposes them | Rollback-only database checkout test + manual |
+| Customer retries checkout with the same request ID | The same order is returned, the replay is marked, and no duplicate order/request record is created | Rollback-only database idempotency test |
+| Menu item is assigned a category from another cart | Database composite foreign key rejects the cross-cart category reference | Rollback-only database constraint test |
+| Owner deletes a menu category | Linked menu items retain their cart and become uncategorised rather than losing cart ownership | Rollback-only database constraint test |
 | Customer opens two different cart QR links on the same device | Each cart has an independent basket and order session | Manual |
 | Customer removes the final item | Basket becomes empty and checkout is unavailable | Automated basket rules |
 | Customer quantity reaches 999 or attempts 1,000 | UI caps quantity at 999; server remains the final validator | Automated basket rules |
