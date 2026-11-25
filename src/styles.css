@@ -71,7 +71,7 @@
 .status.status-ready,.status.status-completed{background:#e5f5e9;color:#267044}
 .status.status-cancelled{background:#fde9e8;color:#a3332d}
 .status.status-partially_ready,.status.status-partially_served{background:#fff3d8;color:#8a6419}
-.item-status-select.status-pending{background:#f1f3f2;color:#66736b;border-color:#dce3de}
+.item-status-select.status-pending{background:#fde9e8;color:#a3332d;border-color:#efc2bf}
 .item-status-select.status-preparing{background:#fff0d9;color:#986017;border-color:#f1d8a8}
 .item-status-select.status-ready{background:#e5f5e9;color:#267044;border-color:#bfe2c8}
 .item-status-select.status-served{background:#e8f1ff;color:#285a9b;border-color:#c8d9f3}
