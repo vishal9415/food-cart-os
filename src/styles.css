@@ -89,3 +89,8 @@
 .status.payment-status-failed{background:#fde9e8;color:#a3332d}
 .status.status-cancelled{background:#fde9e8;color:#a3332d}
 @media(max-width:600px){.order-item-controls{width:100%;justify-content:stretch}.order-item-controls select{flex:1}.order-item-controls .danger-link{flex:none}}
+
+/* Keep payment and destructive order actions visually distinct. */
+.order-payment-action{margin-top:6px}
+.order-danger-action{margin-top:18px;padding-top:14px;border-top:1px solid #edf1ed}
+.order-danger-action .cancel-order-button{background:#fff4f3}
