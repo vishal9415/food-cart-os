@@ -117,10 +117,10 @@ begin
  return jsonb_build_object('order_id',p_order_id,'payment_status','paid','payment_method','cash');
 end; $$;
 
-revoke all on function private.update_order_item_status(uuid,text) from public,anon;
-revoke all on function private.cancel_order_item(uuid) from public,anon;
-revoke all on function private.cancel_order(uuid) from public,anon;
-revoke all on function private.mark_order_paid(uuid) from public,anon;
+revoke all on function private.update_order_item_status(uuid,text) from public,anon,authenticated,service_role;
+revoke all on function private.cancel_order_item(uuid) from public,anon,authenticated,service_role;
+revoke all on function private.cancel_order(uuid) from public,anon,authenticated,service_role;
+revoke all on function private.mark_order_paid(uuid) from public,anon,authenticated,service_role;
 
 create or replace function public.update_order_item_status(p_order_item_id uuid,p_next_status text)
 returns jsonb language sql security invoker set search_path='' as $$ select private.update_order_item_status(p_order_item_id,p_next_status); $$;
@@ -131,10 +131,10 @@ returns jsonb language sql security invoker set search_path='' as $$ select priv
 create or replace function public.mark_order_paid(p_order_id uuid)
 returns jsonb language sql security invoker set search_path='' as $$ select private.mark_order_paid(p_order_id); $$;
 
-revoke all on function public.update_order_item_status(uuid,text) from public,anon;
-revoke all on function public.cancel_order_item(uuid) from public,anon;
-revoke all on function public.cancel_order(uuid) from public,anon;
-revoke all on function public.mark_order_paid(uuid) from public,anon;
+revoke all on function public.update_order_item_status(uuid,text) from public,anon,authenticated,service_role;
+revoke all on function public.cancel_order_item(uuid) from public,anon,authenticated,service_role;
+revoke all on function public.cancel_order(uuid) from public,anon,authenticated,service_role;
+revoke all on function public.mark_order_paid(uuid) from public,anon,authenticated,service_role;
 grant execute on function public.update_order_item_status(uuid,text) to authenticated;
 grant execute on function public.cancel_order_item(uuid) to authenticated;
 grant execute on function public.cancel_order(uuid) to authenticated;
