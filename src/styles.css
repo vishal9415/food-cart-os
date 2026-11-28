@@ -76,3 +76,16 @@
 .item-status-select.status-ready{background:#e5f5e9;color:#267044;border-color:#bfe2c8}
 .item-status-select.status-served{background:#e8f1ff;color:#285a9b;border-color:#c8d9f3}
 @media(max-width:560px){.queue-header-actions{width:100%;justify-content:flex-start}.queue-header-actions button{flex:1}}
+
+
+/* Owner order actions */
+.order-item-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.order-item-controls select{min-width:125px}
+.danger-link{border:0;background:transparent;color:#a3332d;text-decoration:underline;padding:5px 4px;font-size:11px;font-weight:700}
+.cancel-order-button{border:1px solid #efc2bf;background:#fff4f3;color:#a3332d;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:700}
+.paid-button{border:1px solid #bfe2c8;background:#eaf7ed;color:#267044;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:700}
+.status.payment-status-paid{background:#e5f5e9;color:#267044}
+.status.payment-status-pending{background:#fff3d8;color:#8a6419}
+.status.payment-status-failed{background:#fde9e8;color:#a3332d}
+.status.status-cancelled{background:#fde9e8;color:#a3332d}
+@media(max-width:600px){.order-item-controls{width:100%;justify-content:stretch}.order-item-controls select{flex:1}.order-item-controls .danger-link{flex:none}}
